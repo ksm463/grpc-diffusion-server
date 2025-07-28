@@ -26,14 +26,14 @@ docker run \
     --name ${CONTAINER_NAME} \
     --privileged \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v ${fastapi_path}:/grpc_web_manager \
+    -v ${fastapi_path}:/web-manager \
     -e DISPLAY=$DISPLAY \
     -e HOST_IP="$HOST_IP" \
     -e HOST_OS_VERSION="$HOST_OS_VERSION" \
     -e HOST_TIMEZONE="$HOST_TIMEZONE" \
     --shm-size 20g \
     --restart=always \
-    -w /grpc_web_manager \
+    -w /web-manager \
     ${IMAGE_NAME}:${TAG} \
     tail -f /dev/null
 
