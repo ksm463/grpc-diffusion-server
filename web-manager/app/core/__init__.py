@@ -1,1 +1,0 @@
-from .supabase import *

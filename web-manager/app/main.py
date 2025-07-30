@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -15,7 +15,7 @@ from utility.logger import setup_logger
 from utility.exception_handler import custom_http_exception_handler
 
 
-manager_config_path = "/web-manager/app/manager_config.ini"
+manager_config_path = "/web-manager/app/core/manager_config.ini"
 manager_config = configparser.ConfigParser()
 manager_config.read(manager_config_path)
 
@@ -54,6 +54,17 @@ instrumentator = Instrumentator(
         "/openapi.json"
     ]
 )
+
+@app.middleware("http")
+async def suppress_devtools_404_middleware(request: Request, call_next):
+    """
+    개발자 도구 404 오류 로그를 제거하는 미들웨어
+    """
+    if request.url.path == "/.well-known/appspecific/com.chrome.devtools.json":
+        return Response(status_code=204)
+    
+    response = await call_next(request)
+    return response
 
 instrumentator.instrument(app)
 instrumentator.expose(
