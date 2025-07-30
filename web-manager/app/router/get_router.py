@@ -48,7 +48,6 @@ async def get_dummy_main_info(request: Request, server_config = Depends(get_serv
     })
 
 
-
 @get_router.get("/api/main/proto", response_class=PlainTextResponse)
 async def get_proto_content(
     server_config = Depends(get_server_config),
