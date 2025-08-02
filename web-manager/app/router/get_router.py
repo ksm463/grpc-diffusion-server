@@ -3,9 +3,8 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pathlib import Path
 import os
 
-
 from utility.request import get_manager_config, get_server_config, get_logger
-# from service.data_requester import stream_processor
+
 
 get_router = APIRouter()
 
@@ -77,41 +76,3 @@ async def get_proto_content(
     except Exception as exc:
         logger.error(f"Error reading PROTO file {proto_file_path}: {exc}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error reading PROTO file: {exc}")
-
-# @get_router.get("/stream-process")
-# async def process_image(
-#     filename: str,
-#     repeat: int = 1,
-#     manager_config = Depends(get_manager_config),
-#     server_config = Depends(get_server_config),
-#     logger = Depends(get_logger)
-# ):
-#     preview_dir = Path(manager_config['ENV']['PREVIEW_PATH'])
-#     server_ip_address = manager_config['ADDRESS']['SERVER_IP_ADDRESS']
-
-#     preview_dir.mkdir(parents=True, exist_ok=True)
-
-#     async def event_generator():
-#         try:
-#             async for data_chunk in stream_processor(
-#                 filename=filename,
-#                 repeat=repeat,
-#                 preview_dir=preview_dir,
-#                 server_ip_address=server_ip_address,
-#                 manager_config=manager_config,
-#                 grpc_config=server_config,
-#                 logger=logger
-#             ):
-#                 # SSE 형식에 맞춰 "data: {json_string}\n\n" 형태로 yield합니다.
-#                 yield f"data: {data_chunk}\n\n"
-#         except HTTPException as e:
-#             error_payload = json.dumps({"type": "error", "detail": e.detail})
-#             yield f"data: {error_payload}\n\n"
-#             logger.error(f"Stream error for {filename}: {e.detail}", exc_info=True)
-#         except Exception as e:
-#             error_payload = json.dumps({"type": "error", "detail": "An internal server error occurred."})
-#             yield f"data: {error_payload}\n\n"
-#             logger.error(f"Unknown stream error for {filename}: {e}", exc_info=True)
-
-#     # StreamingResponse를 사용하여 event_generator가 생성하는 이벤트를 클라이언트로 보냅니다.
-#     return StreamingResponse(event_generator(), media_type="text/event-stream")
