@@ -2,14 +2,14 @@ from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-# from app.service.user_manager import current_active_user, User
+from service.auth_service import get_current_user
 from utility.request import get_logger
 
 page_router = APIRouter()
 
 templates = Jinja2Templates(directory="/web-manager/app/web/templates")
 
-@page_router.get("/", include_in_schema=False)
+@page_router.get("/", include_in_schema=False, dependencies=[Depends(get_current_user)])
 async def root_redirect(request: Request, logger = Depends(get_logger)):
     logger.info(f"Accessed main page. Request method: {request.method}")
     return templates.TemplateResponse("main.html", {"request": request, "user": None})
@@ -24,37 +24,37 @@ async def load_create_account_page(request: Request, logger = Depends(get_logger
     logger.info(f"Received create_account page load request: {request.method}")
     return templates.TemplateResponse("users/create_account.html", {"request": request, "user": None})
 
-@page_router.get("/main", response_class=HTMLResponse)
+@page_router.get("/main", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_main_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Accessed main page. Request method: {request.method}")
     return templates.TemplateResponse("main.html", {"request": request, "user": None})
 
-@page_router.get("/studio", response_class=HTMLResponse)
+@page_router.get("/studio", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_test_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received studio page load request: {request.method}")
     return templates.TemplateResponse("studio.html", {"request": request, "user": None})
 
-@page_router.get("/folder", response_class=HTMLResponse)
+@page_router.get("/folder", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_folder_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received folder page load request: {request.method}")
     return templates.TemplateResponse("folder.html", {"request": request, "user": None})
 
-@page_router.get("/user_manage", response_class=HTMLResponse)
+@page_router.get("/user_manage", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_user_manage_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received user_manage page load request: {request.method}")
     return templates.TemplateResponse("users/user_manage.html", {"request": request, "user": None})
 
-@page_router.get("/status/fastapi", response_class=HTMLResponse)
+@page_router.get("/status/fastapi", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_fastapi_status_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received FastAPI status page load request: {request.method} from {request.client.host}")
     return templates.TemplateResponse("status/fastapi_status.html", {"request": request, "user": None})
 
-@page_router.get("/status/cpu", response_class=HTMLResponse)
+@page_router.get("/status/cpu", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_cpu_status_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received CPU status page load request: {request.method} from {request.client.host}")
     return templates.TemplateResponse("status/cpu_status.html", {"request": request, "user": None})
 
-@page_router.get("/status/gpu", response_class=HTMLResponse)
+@page_router.get("/status/gpu", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_gpu_status_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received GPU status page load request: {request.method} from {request.client.host}")
     return templates.TemplateResponse("status/gpu_status.html", {"request": request, "user": None})

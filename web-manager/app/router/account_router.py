@@ -37,6 +37,7 @@ async def signup(
 # --- 로그인 ---
 @account_router.post("/auth/db/login", tags=["auth"])
 async def login(
+    response: Response,
     form_data: UserLogin,
     supabase: Client = Depends(get_supabase_client),
     logger=Depends(get_logger)
@@ -45,14 +46,22 @@ async def login(
     사용자 로그인을 처리하고 JWT를 반환
     """
     try:
-        response = supabase.auth.sign_in_with_password(
+        auth_response = supabase.auth.sign_in_with_password(
             {"email": form_data.email, "password": form_data.password}
         )
-        logger.info(f"User {response.user.email} logged in successfully.")
+        logger.info(f"User {auth_response.user.email} logged in successfully.")
         # 클라이언트는 access_token과 refresh_token을 저장
+        response.set_cookie(
+            key="access_token",
+            value=auth_response.session.access_token,
+            httponly=True,
+            samesite="lax",
+            secure=False # 개발 환경에서는 False, 배포(HTTPS) 환경에서는 True로 설정
+        )
+        
         return {
-            "access_token": response.session.access_token,
-            "refresh_token": response.session.refresh_token,
+            "access_token": auth_response.session.access_token,
+            "refresh_token": auth_response.session.refresh_token,
             "token_type": "bearer"
         }
     except Exception as e:
@@ -66,12 +75,14 @@ async def login(
 # --- 로그아웃 API ---
 @account_router.post("/auth/logout", tags=["auth"], status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
+    response: Response,
     user: SupabaseUser = Depends(get_current_user),
     supabase_admin: Client = Depends(get_supabase_admin_client),
     logger=Depends(get_logger)
 ):
     try:
         supabase_admin.auth.admin.sign_out(uid=user.id)
+        response.delete_cookie("access_token")
         logger.info(f"All sessions for user {user.email} (ID: {user.id}) have been invalidated.")
     except Exception as e:
         logger.error(f"Error during sign out for user {user.email}: {e}", exc_info=True)

@@ -1,5 +1,6 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
+from typing import Optional
 from supabase import Client
 from gotrue.types import User 
 
@@ -8,34 +9,36 @@ from utility.request import get_logger
 
 # 토큰은 클라이언트가 'Authorization: Bearer <TOKEN>' 형태로 전송
 # tokenUrl은 실제 로그인 엔드포인트 경로로 지정
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
+    token_from_header: Optional[str] = Depends(oauth2_scheme),
     supabase: Client = Depends(get_supabase_client),
     logger = Depends(get_logger)
 ) -> User:
     """
-    요청 헤더의 JWT를 검증하고 Supabase 사용자 정보를 반환합니다.
+    요청 헤더의 JWT를 검증하고 Supabase 사용자 정보를 반환
     """
+    token = token_from_header or request.cookies.get("access_token")
+
+    if not token:
+        # 헤더에도, 쿠키에도 토큰이 없는 경우에만 인증 실패 처리
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     try:
-        # set_session을 사용하지 않고, 토큰을 직접 get_user에 전달합니다.
-        # 이 방법이 더 명시적이고 안정적입니다.
         user_response = supabase.auth.get_user(token)
-        
-        # user_response 객체나 user_response.user가 None일 수 있으므로 함께 확인합니다.
         if not user_response or not user_response.user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid user session or token.",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise HTTPException(status_code=401, detail="Invalid user session or token.")
         
         user = user_response.user
         return user
         
     except Exception as e:
-        # gotrue-py 라이브러리는 유효하지 않은 토큰에 대해 예외를 발생시킵니다.
         logger.warning(f"Failed to authenticate token: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
