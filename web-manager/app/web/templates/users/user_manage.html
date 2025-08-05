@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>gRPC Account Page</title>
+  <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
+  <link rel="stylesheet" href="/web/static/css/_navbar.css">
+  <link rel="stylesheet" href="/web/static/css/user_manage.css">
+</head>
+<body>
+  {% include 'partials/_navbar.html' %}
+  <div id="container">
+    <div class="container-header">gRPC Account Manage Page</div>
+
+    <main id="app">
+      <div id="account-page-content" class="page-content active">
+        <section id="current-user-info-section">
+          <h2>현재 사용자 정보</h2>
+          <div id="currentUserInfo" class="info-display-area">
+            <p>Email: <span id="currentUserEmail">Loading...</span></p>
+            <p>ID: <span id="currentUserId">Loading...</span></p>
+            <p>인증 상태: <span id="currentUserIsVerified">Loading...</span></p>
+            <p>관리자: <span id="currentUserIsSuperuser">Loading...</span></p> </div>
+          </div>
+        </section>
+
+        <section id="change-password-section">
+          <h2> 비밀번호 변경</h2>
+          <form id="changePasswordForm">
+            <div>
+              <label for="newPassword"> 새 비밀번호:</label>
+              <input type="password" id="newPassword" name="newPassword" required>
+            </div>
+            <div>
+              <label for="confirmNewPassword"> 새 비밀번호 확인:</label>
+              <input type="password" id="confirmNewPassword" name="confirmNewPassword" required>
+            </div>
+            <button type="submit"> 비밀번호 변경</button>
+          </form>
+          <div id="changePasswordMessage" style="margin-top: 1em;"></div>
+        </section>
+
+        <section id="user-list-section" style="display: none;">
+          <h2> 등록된 계정 목록 (관리자용)</h2>
+          <div id="userListContainer">
+            <p id="userListMessage"> 이 기능은 관리자에게만 제공됩니다. </p>
+            <table id="userListTable" style="display: none;">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>ID</th>
+                  <th>인증 상태</th>
+                  <th>관리자</th>
+                  <th>작업</th>
+                </tr>
+              </thead>
+              <tbody id="userListTableBody">
+              </tbody>
+            </table>
+          </div>
+          <button id="refreshUserListButton" style="display: none;">목록 새로고침</button>
+          <div id="userListError" class="error-message" style="display: none;"></div>
+          <div id="userActionMessage" style="margin-top: 1em;"></div>
+        </section>
+
+        </div>
+    </main>
+  </div>
+
+  <script src="/web/static/js/auth.js"></script>
+  <script src="/web/static/js/user_manage.js"></script>
+</body>
+</html>
