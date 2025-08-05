@@ -1,0 +1,28 @@
+html {
+    height: 100%; /* 뷰포트 전체 높이를 차지하도록 설정 */
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* html 요소 자체의 스크롤바 방지 */
+}
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0; /* body의 기본 패딩 제거 */
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* html 요소의 전체 높이를 차지하도록 설정 */
+    box-sizing: border-box; /* padding과 border를 전체 높이에 포함 */
+    padding-top: 50px; /* 네비게이션 바의 높이만큼 상단 여백 (네비게이션 바가 position: fixed일 경우) */
+    overflow: hidden; /* body 요소 자체의 스크롤바 방지 */
+}
+#grafana-iframe-container {
+    flex-grow: 1; /* body flex 내에서 사용 가능한 모든 수직 공간을 차지 */
+    display: flex; /* 내부 iframe이 높이 100%를 올바르게 사용하도록 설정 */
+    overflow: hidden; /* 컨테이너 자체의 불필요한 스크롤바 방지 */
+    min-height: 0; /* flex 아이템이 자식 요소의 크기에 의해 과도하게 커지는 것을 방지하고, flex-grow가 올바르게 작동하도록 도움 */
+}
+iframe#grafana-dashboard {
+    width: 100%;
+    height: 100%; /* 부모(#grafana-iframe-container)의 전체 높이를 차지 */
+    border: none; /* iframe 테두리 제거 */
+}

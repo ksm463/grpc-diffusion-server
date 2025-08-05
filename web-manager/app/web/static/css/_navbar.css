@@ -1,0 +1,78 @@
+/*
+ * _navbar.css
+*/
+
+#main-nav {
+    background-color: #2c2c54;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #9D8DF1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    box-sizing: border-box;
+    height: 50px;
+  }
+  
+  /* 네비게이션 바 내부의 ul 목록 스타일 */
+  #main-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* 네비게이션 바 내부의 li 목록 아이템 스타일 */
+  #main-nav ul li {
+    margin: 0 15px;
+  }
+  
+  /* 네비게이션 바 내부의 링크(a 태그) 스타일 */
+  #main-nav ul li a {
+    color: #EFEFEF;
+    text-decoration: none;
+    font-size: 16px;
+    transition: color 0.2s ease;
+  }
+  
+  /* 링크에 마우스 올렸을 때 스타일 */
+  #main-nav ul li a:hover {
+    color: #F7C873;
+  }
+  
+  /* 로그아웃 버튼 스타일 */
+  #main-nav ul li button#logoutButton {
+    background: none;
+    border: 1px solid #EFEFEF;
+    color: #EFEFEF;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: normal;
+    line-height: normal;
+    margin: 0;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    vertical-align: middle;
+  }
+  
+  /* 로그아웃 버튼에 마우스 올렸을 때 스타일 */
+  #main-nav ul li button#logoutButton:hover {
+    background-color: #F7C873;
+    color: #1A1A2E;
+    border-color: #F7C873;
+    transform: none;
+  }
+  
+  /* JavaScript에 의해 제어될 항목들의 초기 상태 */
+  #nav-login-item {
+    display: list-item;
+  }
+  #nav-logout-item {
+    display: none;
+  }

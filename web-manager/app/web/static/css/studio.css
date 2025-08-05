@@ -1,0 +1,205 @@
+/*
+ * studio.css
+*/
+
+:root {
+    --body-bg-color: #F4F4F9;
+    --container-bg-color: #FFFFFF;
+    --primary-color: #9D8DF1;
+    --secondary-bg-color: #2c2c54;
+    --accent-color: #F7C873;
+    --dark-text-color: #333333;
+    --light-text-color: #EFEFEF;
+    --border-color: #e0e0e0;
+}
+
+/* 기본 & 컨테이너 */
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--body-bg-color);
+    margin: 0;
+    padding-top: 50px; /* 네비게이션 바 높이만큼 설정 */
+}
+
+#container {
+    width: 80%;
+    max-width: 800px;
+    margin: 30px auto;
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.container-header {
+    background-color: var(--secondary-bg-color);
+    color: var(--primary-color);
+    padding: 25px 0;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.content {
+    padding: 20px 30px 40px; 
+    text-align: left; 
+}
+
+/* 입력 & 버튼 */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--dark-text-color);
+}
+
+#prompt-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    resize: vertical;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background-color: #f9f9f9;
+    color: var(--dark-text-color);
+}
+
+#prompt-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(157, 141, 241, 0.5);
+}
+
+#generate-button {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--light-text-color);
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+#generate-button:hover {
+    background-color: #8978d1;
+}
+
+#generate-button:active {
+    transform: scale(0.99);
+}
+
+#generate-button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+}
+
+/* 고급 설정 */
+.advanced-settings {
+    margin-top: 25px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 5px 15px;
+}
+
+.advanced-settings summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 10px 0;
+    color: var(--dark-text-color);
+}
+
+.settings-content {
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item label {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+    display: block;
+}
+
+input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+    accent-color: var(--primary-color); /* 슬라이더 색상 변경 */
+}
+
+.seed-container {
+    display: flex;
+    align-items: center;
+}
+
+#seed-input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#random-seed-button {
+    margin-left: 10px;
+    padding: 8px 12px;
+    border: none;
+    background-color: var(--accent-color); /* 골드 버튼 */
+    color: var(--dark-text-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+#random-seed-button:hover {
+    background-color: #f5be5b;
+}
+
+/* 결과 영역 */
+.result-area {
+    margin-top: 30px;
+}
+
+.result-area h2 {
+    background-color: var(--primary-color);
+    color: var(--light-text-color);
+    padding: 1em 1.5em;
+    margin: -20px -30px 20px; /* content padding 고려하여 위치 조정 */
+    font-size: 1.2em;
+    border-bottom: none;
+}
+
+#result-image-wrapper {
+    width: 100%;
+    min-height: 512px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+#result-image-wrapper p {
+    color: #888;
+    font-size: 18px;
+}
+
+#result-image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 6px;
+}
