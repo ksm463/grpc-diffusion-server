@@ -24,7 +24,6 @@ async def signup(
     """
     try:
         # Supabase에 사용자 생성을 요청
-        # Supabase 설정에서 이메일 인증이 활성화된 경우, 확인 메일이 발송
         sign_up_data = {"email": user_credentials.email, "password": user_credentials.password}
         response = supabase.auth.sign_up(sign_up_data)
         logger.info(f"User registration initiated for {response.user.email}")
@@ -92,7 +91,7 @@ async def logout(
         )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-# --- 보호된 라우트 ---
+# --- 인증 라우트 ---
 @account_router.get("/authenticated-route")
 async def authenticated_route(
     user: SupabaseUser = Depends(get_current_user),
@@ -117,7 +116,6 @@ async def get_my_info(
     return {
         "email": user.email,
         "id": user.id,
-        "is_active": True,  # Supabase에서는 별도의 is_active 플래그가 없으므로 항상 True로 간주
         "is_verified": is_verified,
         "is_superuser": is_superuser,
         "user_metadata": user.user_metadata,
@@ -155,8 +153,10 @@ async def list_all_users(
     """
     logger.info(f"Admin user '{admin_user.email}' requested to list all users.")
     try:
-        response = supabase_admin.auth.admin.list_users()
-        return response.users
+        # supabase-py v2부터 list_users()는 사용자 리스트를 직접 반환합니다.
+        users_list = supabase_admin.auth.admin.list_users()
+        # .users 속성 없이 리스트를 바로 반환합니다.
+        return users_list
     except Exception as e:
         logger.error(f"Error listing users: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not retrieve users list.")
