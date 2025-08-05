@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>CPU Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
+    <link rel="stylesheet" href="/web/static/css/_navbar.css">
+    <link rel="stylesheet" href="/web/static/css/status_pages.css">
+</head>
+<body>
+    {% include 'partials/_navbar.html' %}
+    <div id="grafana-iframe-container">
+        <iframe id="grafana-dashboard"
+            src="http://192.168.10.11:53000/d/rYdddlPWk/node-exporter-full?orgId=1&from=now-24h&to=now&timezone=browser&var-datasource=aemmtgo86pc74a&var-job=node&var-nodename=a893a2f621d2&var-node=192.168.10.11:59440&var-diskdevices=%5Ba-z%5D%2B%7Cnvme%5B0-9%5D%2Bn%5B0-9%5D%2B%7Cmmcblk%5B0-9%5D%2B&refresh=1m&kiosk">
+
+        </iframe>
+    </div>
+    <script src="/web/static/js/auth.js"></script>
+</body>
+</html>

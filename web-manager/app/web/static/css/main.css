@@ -1,0 +1,261 @@
+/*
+ * main.css
+*/
+
+:root {
+    --body-bg-color: #F4F4F9;
+    --container-bg-color: #FFFFFF;
+    --section-header-bg-color: #2c2c54;
+    --primary-color: #9D8DF1;
+    --accent-color: #F7C873;
+    --dark-text-color: #333333;
+    --light-text-color: #EFEFEF;
+    --border-color: #e0e0e0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--body-bg-color); /* 밝은 배경색 */
+    color: var(--dark-text-color); /* 텍스트는 어둡게 */
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    box-sizing: border-box;
+    padding-top: 50px; /* 네비게이션 바 높이 */
+}
+
+#container {
+    width: 800px;
+    margin: 30px auto;
+    background: var(--container-bg-color); /* 흰색 배경 */
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.container-header {
+    background-color: #2c2c54;
+    color: var(--primary-color); 
+    padding: 20px 0;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    border-bottom: 1px solid var(--border-color);
+}
+
+main#app {
+    padding: 30px;
+    flex-grow: 1;
+}
+
+section {
+    margin-bottom: 2em;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--container-bg-color);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+
+h1, h2, h3 {
+    margin-top: 0;
+    color: var(--dark-text-color);
+}
+
+h2 {
+    background-color: #9D8DF1;
+    color: var(--light-text-color);
+    padding: 1em 1.5em;
+    margin: 0;
+    font-size: 1.2em;
+}
+
+section > div, section > h3, section > pre, section > button {
+    padding: 0 1.5em;
+    margin-left: 0;
+    margin-right: 0;
+}
+section > h3 {
+    margin-top: 1em;
+}
+section > :last-child {
+    margin-bottom: 1.5em;
+}
+
+h3 {
+    color: #555;
+    margin-bottom: 0.8em;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5em;
+    font-weight: bold;
+    color: #444;
+}
+
+input[type="file"],
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"] {
+    padding: 0.8em;
+    margin-bottom: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%; /* calc 제거하고 width 100%로 변경 */
+    box-sizing: border-box; /* padding을 포함하여 크기 계산 */
+    font-size: 0.95em;
+    background-color: #f9f9f9;
+    color: var(--dark-text-color);
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(157, 141, 241, 0.5);
+}
+
+button {
+    padding: 0.8em 1.5em;
+    background-color: var(--primary-color);
+    color: var(--light-text-color); /* 버튼 텍스트는 밝게 */
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-top: 0.5em;
+    margin-right: 0.5em;
+}
+button:last-of-type {
+    margin-right: 0;
+}
+
+button:hover {
+    background-color: #8978d1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(157, 141, 241, 0.2);
+}
+button:active {
+    transform: scale(0.98);
+}
+button:disabled {
+    background-color: #d0d0d0;
+    color: #777;
+    border-color: #bbb;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 조회, 다운로드 등 보조 버튼에 Accent 색상 적용 */
+button#viewProtoButton, button#downloadProtoButton {
+    background-color: var(--accent-color);
+    color: var(--dark-text-color);
+}
+button#viewProtoButton:hover, button#downloadProtoButton:hover {
+    background-color: #f5be5b;
+}
+
+
+pre {
+    background-color: #eee;
+    padding: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 250px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    line-height: 1.4;
+    margin-bottom: 1em;
+    color: var(--dark-text-color);
+}
+
+#hostSystemInfo, #grpcPortInfo, #clientInfo {
+    font-family: monospace;
+    background-color: #e9ecef;
+    padding: 1em;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    font-size: 0.95em;
+    line-height: 1.5;
+    margin-top: 0.5em;
+}
+#hostSystemInfo span, #grpcPortInfo span, #clientInfo span {
+    font-weight: bold;
+    color: #005a8c;
+}
+
+.error-message {
+    color: #721c24;
+    font-weight: bold;
+    margin-top: 1em;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 0.8em;
+    border-radius: 4px;
+}
+pre.error-message {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+    white-space: pre-wrap;
+}
+
+section#proto-section {
+    position: relative;
+}
+
+.copy-button {
+    position: absolute;
+    top: 1em; /* h2 내부 오른쪽으로 위치 조정 */
+    right: 1.5em;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--light-text-color);
+    border: 1px solid var(--light-text-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    z-index: 10;
+    display: none;
+    transition: background-color 0.2s ease;
+}
+
+.copy-button:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.copy-button.copied {
+    background-color: var(--accent-color);
+    color: var(--dark-text-color);
+    border-color: var(--accent-color);
+}
+
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
