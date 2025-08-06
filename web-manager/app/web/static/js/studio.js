@@ -42,6 +42,39 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   });
 
+  document.getElementById('generate-button').addEventListener('click', async () => {
+    // 사용자 인증 토큰 가져오기 (예: auth.js 또는 쿠키/로컬 스토리지)
+    const token = getAuthToken(); 
+
+    const data = {
+        prompt: document.getElementById('prompt-input').value,
+        guidance_scale: parseFloat(document.getElementById('guidance-scale').value),
+        num_inference_steps: parseInt(document.getElementById('inference-steps').value),
+        width: parseInt(document.getElementById('width').value),
+        height: parseInt(document.getElementById('height').value),
+        seed: document.getElementById('seed-input').value ? parseInt(document.getElementById('seed-input').value) : null
+    };
+
+    const response = await fetch('/api/v1/images/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+    });
+
+    const result = await response.json();
+    
+    // 결과 이미지 표시 로직
+    const resultWrapper = document.getElementById('result-image-wrapper');
+    if (result.image_url) {
+        resultWrapper.innerHTML = `<img src="${result.image_url}" alt="Generated Image">`;
+    } else {
+        resultWrapper.innerHTML = `<p>Error: ${result.error}</p>`;
+    }
+    });
+
 
   /**
    * '이미지 생성' 버튼을 눌렀을 때 실행되는 메인 함수
