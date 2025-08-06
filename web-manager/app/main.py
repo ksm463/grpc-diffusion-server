@@ -7,9 +7,9 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from router.get_router import get_router
+from router.info_router import info_router
 from router.page_router import page_router
-# from router.post_router import post_router
+from router.image_router import image_router
 from router.account_router import account_router
 from utility.logger import setup_logger
 from utility.exception_handler import custom_http_exception_handler
@@ -77,9 +77,9 @@ static_dir_app_path = Path("/web-manager/app/web/static")
 app.mount("/web/static", StaticFiles(directory=static_dir_app_path), name="static_app_files")
 
 
-app.include_router(get_router)
-# app.include_router(post_router)
+app.include_router(info_router)
 app.include_router(page_router)
+app.include_router(image_router)
 app.include_router(account_router)
 
 

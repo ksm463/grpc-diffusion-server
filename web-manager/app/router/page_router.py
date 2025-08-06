@@ -34,10 +34,10 @@ async def load_test_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received studio page load request: {request.method}")
     return templates.TemplateResponse("studio.html", {"request": request, "user": None})
 
-@page_router.get("/folder", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
-async def load_folder_page(request: Request, logger = Depends(get_logger)):
-    logger.info(f"Received folder page load request: {request.method}")
-    return templates.TemplateResponse("folder.html", {"request": request, "user": None})
+@page_router.get("/gallery", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
+async def load_gallery_page(request: Request, logger = Depends(get_logger)):
+    logger.info(f"Received gallery page load request: {request.method}")
+    return templates.TemplateResponse("gallery.html", {"request": request, "user": None})
 
 @page_router.get("/user_manage", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_user_manage_page(request: Request, logger = Depends(get_logger)):
