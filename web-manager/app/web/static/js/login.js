@@ -32,7 +32,7 @@ loginForm.addEventListener('submit', async function(event) {
             localStorage.setItem('refresh_token', responseData.refresh_token);
             
             console.log('Login successful. Token stored.');
-            window.location.href = '/main'; // 메인 페이지로 리디렉션
+            window.location.href = '/studio'; // 스튜디오 페이지로 리디렉션
 
         } else { // 로그인 실패 시
             // 서버에서 보낸 에러 메시지를 표시합니다.

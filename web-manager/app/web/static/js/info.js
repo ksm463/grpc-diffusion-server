@@ -15,64 +15,6 @@ function handleAuthError(response) {
   return false;
 }
 
-// --- 호스트 시스템 정보 가져오는 함수 (Uptime 제외) ---
-async function fetchHostSystemInfo() {
-  const hostIpSpan = document.getElementById('hostIpAddressInfo');
-  const hostOsSpan = document.getElementById('hostOsVersionInfo');
-  const hostTimezoneSpan = document.getElementById('hostTimezoneInfo');
-
-  if (hostIpSpan) hostIpSpan.textContent = 'Loading...';
-  if (hostOsSpan) hostOsSpan.textContent = 'Loading...';
-  if (hostTimezoneSpan) hostTimezoneSpan.textContent = 'Loading...';
-
-  try {
-    const response = await authService.fetchWithAuth('/api/main/host_system_info');
-        
-    if (!response.ok) {
-        // 401은 authService가 자동으로 처리하므로, 다른 에러만 신경 쓰면 됩니다.
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-
-    if (hostIpSpan) hostIpSpan.textContent = data.host_ip_address || 'N/A';
-    if (hostOsSpan) hostOsSpan.textContent = data.host_os_version || 'N/A';
-    if (hostTimezoneSpan) hostTimezoneSpan.textContent = data.host_timezone || 'N/A';
-
-  } catch (error) {
-    if (error.message !== 'Unauthorized') {
-      console.error('Failed to fetch host system info:', error);
-    if (hostIpSpan) hostIpSpan.textContent = 'Error';
-    if (hostOsSpan) hostOsSpan.textContent = 'Error';
-    if (hostTimezoneSpan) hostTimezoneSpan.textContent = 'Error';
-    }
-  }
-}
-
-// --- 클라이언트 IP 주소 가져오는 함수 ---
-async function fetchClientIpAddress() {
-  const clientIpSpan = document.getElementById('clientIpAddressInfo');
-  if (!clientIpSpan) return;
-  clientIpSpan.innerHTML = 'Loading... <span class="loader loader-small"></span>'; 
-  try {
-    const response = await authService.fetchWithAuth('/api/main/client_ip');
-    if (!response.ok) {
-      if (handleAuthError(response)) return;
-      let errorDetail = `HTTP error! status: ${response.status}`;
-      try {
-        const errorData = await response.json();
-        if (errorData.detail) errorDetail = errorData.detail;
-      } catch(e) { /* 응답이 JSON이 아니거나 detail 필드가 없을 수 있음 */ }
-      throw new Error(errorDetail);
-    }
-    const data = await response.json();
-    clientIpSpan.textContent = data.client_ip || 'N/A';
-  } catch (error) {
-    console.error('Failed to fetch client IP:', error);
-    clientIpSpan.textContent = 'N/A (Error)';
-    clientIpSpan.style.color = '#dc3545';
-  }
-}
-
 // --- gRPC 정보 가져오는 함수 ---
 async function fetchGrpcPortInfo() {
   const grpcInfoDiv = document.getElementById('grpcPortInfo');
@@ -80,7 +22,7 @@ async function fetchGrpcPortInfo() {
   grpcInfoDiv.innerHTML = 'Loading... <span class="loader"></span>';
 
   try {
-    const response = await fetch('/api/main/grpc_info', {
+    const response = await fetch('/api/info/grpc_info', {
       headers: { 'Authorization': `Bearer ${token}` }
   });
   if (!response.ok) {
@@ -114,7 +56,7 @@ async function fetchProtoFileContent() {
     viewButton.disabled = true;
 
     try {
-      const response = await fetch('/api/main/proto', {
+      const response = await fetch('/api/info/proto', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!response.ok) {
@@ -201,21 +143,12 @@ function addMainPageEventListeners() {
           }
       });
   }
-
-  // 클라이언트 정보 설정
-  const userAgentSpan = document.getElementById('userAgentInfo');
-  const screenResSpan = document.getElementById('screenResolutionInfo');
-
-  if(userAgentSpan) userAgentSpan.textContent = navigator.userAgent || 'N/A';
-  if(screenResSpan) screenResSpan.textContent = `${window.screen.width}x${window.screen.height}` || 'N/A';
 }
 
 // 페이지 초기 로드
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('main-page-content')) {
     addMainPageEventListeners();
-    fetchHostSystemInfo();
     fetchGrpcPortInfo();
-    fetchClientIpAddress();
   }
 });

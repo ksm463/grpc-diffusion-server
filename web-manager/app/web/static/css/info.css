@@ -1,5 +1,5 @@
 /*
- * main.css
+ * info.css
 */
 
 :root {
@@ -181,7 +181,7 @@ pre {
     color: var(--dark-text-color);
 }
 
-#hostSystemInfo, #grpcPortInfo, #clientInfo {
+#grpcPortInfo {
     font-family: monospace;
     background-color: #e9ecef;
     padding: 1em;
@@ -191,7 +191,7 @@ pre {
     line-height: 1.5;
     margin-top: 0.5em;
 }
-#hostSystemInfo span, #grpcPortInfo span, #clientInfo span {
+#grpcPortInfo span {
     font-weight: bold;
     color: #005a8c;
 }
