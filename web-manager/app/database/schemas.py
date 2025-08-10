@@ -1,4 +1,5 @@
 import uuid
+import enum
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
@@ -76,3 +77,81 @@ class ImageCreationRequest(BaseModel):
                 }
             ]
         }
+
+class AIServerRequest(BaseModel):
+    """
+    AI 생성 서버에 작업을 요청하기 위한 데이터 모델
+    """
+    request_id: uuid.UUID
+    prompt: str
+    guidance_scale: float
+    num_inference_steps: int
+    width: int
+    height: int
+    seed: int
+
+class GenerationStatus(str, enum.Enum):
+    """
+    AI 서버의 이미지 생성 작업 상태를 나타내는 Enum
+    """
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+
+
+class AIServerResponse(BaseModel):
+    """
+    AI 생성 서버의 작업 완료 후 반환되는 응답 모델
+    """
+    request_id: uuid.UUID = Field(
+        ...,
+        description="원본 요청을 식별하기 위한 고유 ID"
+    )
+    status: GenerationStatus = Field(
+        ...,
+        description="생성 작업의 성공/실패 여부"
+    )
+    # used_seed는 성공/실패 여부와 관계없이 사용된 값을 알아야 할 수 있으므로 필수로 유지
+    used_seed: int = Field(
+        ...,
+        description="실제 이미지 생성에 사용된 시드 값"
+    )
+    image_data: Optional[bytes] = Field(
+        default=None,
+        description="생성 성공 시 이미지의 원시 바이너리 데이터 (uint8 배열)"
+    )
+    error_message: Optional[str] = Field(
+        default=None,
+        description="생성 실패 시 에러 메시지"
+    )
+
+class ImageRecordCreate(BaseModel):
+    """
+    Supabase 'images' 테이블에 레코드를 생성하기 위한 모델
+    """
+    user_id: uuid.UUID
+    image_url: str
+    prompt: str
+    guidance_scale: float
+    num_inference_steps: int
+    width: int
+    height: int
+    seed: int
+
+
+class ImageRecord(ImageRecordCreate):
+    """
+    DB에서 'images' 레코드를 조회한 후 사용할 전체 데이터 모델
+    """
+    id: uuid.UUID
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ImageGenerationResponse(BaseModel):
+    """
+    이미지 생성 요청에 대한 최종 응답 모델
+    """
+    image_url: str
+    used_seed: int
+    message: str

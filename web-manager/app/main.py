@@ -6,6 +6,7 @@ import configparser
 from contextlib import asynccontextmanager
 from pathlib import Path
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from supabase import create_client, Client
 
 from router.info_router import info_router
 from router.page_router import page_router
@@ -35,6 +36,27 @@ async def lifespan(app: FastAPI):
     app.state.manager_config = manager_config
     app.state.server_config = server_config
     app.state.logger = logger
+    
+    logger.info("Creating Supabase clients...")
+    supabase_url = manager_config['SUPABASE']['URL']
+    # --- 일반(anon) 키와 서비스(service) 키를 모두 가져옵니다 ---
+    supabase_key = manager_config['SUPABASE']['KEY'] 
+    supabase_service_key = manager_config['SUPABASE']['SERVICE_KEY']
+    
+    if not supabase_url or not supabase_key or not supabase_service_key:
+        error_msg = "Supabase URL, Key, and Service Key must be set in manager_config.ini"
+        logger.error(error_msg)
+        raise ValueError(error_msg)
+
+    # --- 1. 일반(anon) 키를 사용하는 클라이언트를 생성합니다. ---
+    supabase_client: Client = create_client(supabase_url, supabase_key)
+    app.state.supabase_client = supabase_client
+    logger.info("Supabase client (anon key) created and stored in app.state.")
+
+    # --- 2. 서비스 키를 사용하는 어드민 클라이언트를 생성합니다. ---
+    supabase_admin_client: Client = create_client(supabase_url, supabase_service_key)
+    app.state.supabase_admin_client = supabase_admin_client
+    logger.info("Supabase admin client (service key) created and stored in app.state.")
 
     yield
     logger.info("Logging server stopped")

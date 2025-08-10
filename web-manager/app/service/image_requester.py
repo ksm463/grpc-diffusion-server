@@ -1,23 +1,112 @@
-from typing import List
+import uuid
+from typing import List, Dict
 from datetime import datetime, timezone, timedelta
 
-async def images_paginated(page: int, limit: int) -> List[dict]:
-    """
-    (서비스 계층) 샘플 이미지 데이터를 생성하고 페이지네이션을 적용하여 반환합니다.
-    """
-    all_sample_images = []
-    base_time = datetime.now(timezone.utc)
-    for i in range(1, 5):
-        all_sample_images.append({
-            "image_url": f"/preview/sd_sample_{i}.jpg",
-            "prompt": f"AI로 생성된 샘플 이미지 {i}입니다.",
-            "created_at": (base_time - timedelta(minutes=i*5)).isoformat(),
-        })
+from supabase import Client
+from gotrue.types import User as SupabaseUser
+from database.schemas import (
+    ImageCreationRequest, 
+    AIServerRequest,
+    ImageGenerationResponse,
+    ImageRecordCreate,
+    ImageRecord
+)
 
-    # 페이지네이션 계산
-    start_index = (page - 1) * limit
-    end_index = start_index + limit
+
+async def images_paginated(
+    user: SupabaseUser, 
+    db: Client, 
+    page: int, 
+    limit: int,
+    logger
+) -> List[ImageRecord]:
+    """
+    (서비스 계층) 현재 로그인된 사용자의 이미지 목록을 Supabase에서 가져옵니다.
+    """
+    try:
+        # 페이지네이션 계산: Supabase의 range는 끝 인덱스를 포함합니다.
+        start_index = (page - 1) * limit
+        end_index = start_index + limit - 1
+
+        # Supabase 쿼리 실행
+        response = db.from_("images").select("*") \
+            .eq('user_id', user.id) \
+            .order('created_at', desc=True) \
+            .range(start_index, end_index) \
+            .execute()
+
+        logger.info(f"Fetched {len(response.data)} images for user '{user.id}' from Supabase.")
+        
+        # Pydantic 모델로 데이터 변환 (타입 안정성 확보)
+        # response.data는 딕셔너리의 리스트입니다.
+        images = [ImageRecord.model_validate(item) for item in response.data]
+        return images
+
+    except Exception as e:
+        logger.error(f"Failed to fetch images from Supabase for user '{user.id}': {e}")
+        return []
+
+
+async def image_generation_request(
+    request_data: ImageCreationRequest,
+    user: SupabaseUser,
+    db: Client,
+    manager_config: dict,
+    server_config: dict,
+    logger
+) -> dict:
+    """
+    (서비스 계층) 이미지 생성 요청의 비즈니스 로직을 처리합니다.
+    """
+    # 1. 클라이언트로부터 받은 데이터 확인 (로깅)
+    user_id = user.id
+    logger.info(f"User '{user_id}' sent request for image generation: {request_data.model_dump_json(indent=2)}")
+
+    # 2. AI 서버에 보낼 요청 데이터 생성
+    request_id = str(uuid.uuid4())
+    ai_server_request = AIServerRequest(
+        request_id=request_id,
+        prompt=request_data.prompt,
+        guidance_scale=request_data.guidance_scale,
+        num_inference_steps=request_data.num_inference_steps,
+        width=request_data.width,
+        height=request_data.height,
+        seed=request_data.seed
+    )
+    logger.info(f"Prepared AI server request (request_id: {request_id}): {ai_server_request}")
+
+    # 3. (향후 구현) gRPC 클라이언트를 호출하여 AI 서버에 작업 요청
+    #    예: response = await grpc_client.generate_image(**ai_server_request)
+
+    # 4. 임시 결과 이미지 
+    temp_image_url = "/preview/sd_sample_1.jpg"
+    final_seed = request_data.seed if request_data.seed != -1 else 12345
     
-    paginated_images = all_sample_images[start_index:end_index]
+    # 5. Supabase에 저장할 데이터 준비
+    image_record_data = ImageRecordCreate(
+        user_id=user_id,
+        image_url=temp_image_url,
+        prompt=request_data.prompt,
+        guidance_scale=request_data.guidance_scale,
+        num_inference_steps=request_data.num_inference_steps,
+        width=request_data.width,
+        height=request_data.height,
+        seed=final_seed
+    )
+    logger.info(f"Prepared data for Supabase: {image_record_data.model_dump_json(indent=2)}")
+
+    # 6. Supabase 'images' 테이블에 데이터 삽입
+    try:
+        db.from_("images").insert(image_record_data.model_dump(mode='json')).execute()
+        logger.info(f"Successfully inserted image record for user '{user_id}' into Supabase.")
+    except Exception as e:
+        logger.error(f"Failed to insert image record into Supabase: {e}")
     
-    return paginated_images
+    # 7. 클라이언트에 최종 응답 반환
+    logger.info(f"Returning temporary sample image: {temp_image_url}")
+
+    return ImageGenerationResponse(
+        image_url=temp_image_url,
+        used_seed=request_data.seed if request_data.seed != -1 else 12345,
+        message="Image generation started successfully."
+    )
