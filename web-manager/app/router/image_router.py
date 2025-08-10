@@ -23,7 +23,7 @@ async def generate_image(
     클라이언트로부터 프롬프트와 설정값을 받아 이미지를 생성하는 프로세스
     """
     # 1. 클라이언트로부터 받은 데이터 확인 
-    user_id = user.get("id")
+    user_id = user.id
     logger.info(f"User '{user_id}' send request for image generation: {request_data.model_dump_json(indent=2)}")
 
     # 3. (향후 구현) gRPC 클라이언트를 호출하여 AI 서버에 작업 요청
@@ -37,7 +37,7 @@ async def generate_image(
 
     # 5. 임시로 성공 응답을 반환하는 예시입니다.
     #    실제로는 Supabase에 업로드된 이미지 URL을 반환해야 합니다.
-    temp_image_url = f"https://via.placeholder.com/{request_data.width}x{request_data.height}.png?text=Generated+Image+for+{request_data.prompt[:20]}"
+    temp_image_url = "/preview/sd_sample_1.jpg"
     
     return {
         "image_url": temp_image_url,
