@@ -24,18 +24,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 이벤트 리스너 설정 ---
 
     // '이미지 생성' 버튼 클릭 시 handleGenerateImage 함수 실행
-    // ✅ 중복된 이벤트 리스너를 제거하고 하나만 남깁니다.
+    // 중복된 이벤트 리스너를 제거하고 하나만 남기게 됨
     generateButton.addEventListener('click', handleGenerateImage);
 
     // '랜덤 시드' 버튼 클릭 시
     advancedSettings.randomSeedButton.addEventListener('click', () => {
-        // -1 또는 1과 2^53-1 사이의 매우 큰 랜덤 정수를 생성하여 시드 입력창에 설정
         advancedSettings.seedInput.value = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER) + 1;
     });
 
     // 모든 슬라이더의 값이 변경될 때마다 화면에 표시되는 숫자도 업데이트
     Object.keys(sliderValueSpans).forEach(key => {
-        const slider = advancedSettings[key]; // 수정: 불필요한 문자열 처리 제거
+        const slider = advancedSettings[key];
         if (slider) {
             // 초기 값 설정
             sliderValueSpans[key].textContent = slider.value;
@@ -70,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            const response = await authService.fetchWithAuth('/generate', {
+            const response = await authService.fetchWithAuth('/api/studio/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -115,11 +114,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * ✅ 이미지 URL을 받아 화면에 표시하는 함수
+     * 이미지 URL을 받아 화면에 표시하는 함수
      * @param {string} imageUrl - 화면에 표시할 이미지의 URL
      */
     function displayResultImage(imageUrl) {
-        resultWrapper.innerHTML = ''; // 이전 내용 삭제
+        resultWrapper.innerHTML = '';
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = 'Generated Image';

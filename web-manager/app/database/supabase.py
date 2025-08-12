@@ -1,7 +1,7 @@
 from fastapi import Request, HTTPException, status
 from supabase import Client
 
-from app.utility.request import get_manager_config 
+# from app.utility.request import get_manager_config
 
 
 def get_supabase_client(request: Request) -> Client:

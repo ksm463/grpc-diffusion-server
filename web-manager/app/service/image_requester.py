@@ -1,10 +1,9 @@
 import uuid
-from typing import List, Dict
-from datetime import datetime, timezone, timedelta
+from typing import List
 
 from supabase import Client
 from gotrue.types import User as SupabaseUser
-from database.schemas import (
+from database.image_schemas import (
     ImageCreationRequest, 
     AIServerRequest,
     ImageGenerationResponse,
@@ -21,10 +20,9 @@ async def images_paginated(
     logger
 ) -> List[ImageRecord]:
     """
-    (서비스 계층) 현재 로그인된 사용자의 이미지 목록을 Supabase에서 가져옵니다.
+    로그인된 사용자의 이미지 목록을 Supabase에서 가져와 웹에 전달
     """
     try:
-        # 페이지네이션 계산: Supabase의 range는 끝 인덱스를 포함합니다.
         start_index = (page - 1) * limit
         end_index = start_index + limit - 1
 
@@ -56,9 +54,9 @@ async def image_generation_request(
     logger
 ) -> dict:
     """
-    (서비스 계층) 이미지 생성 요청의 비즈니스 로직을 처리합니다.
+    이미지 생성 요청의 비즈니스 로직 처리
     """
-    # 1. 클라이언트로부터 받은 데이터 확인 (로깅)
+    # 1. 클라이언트로부터 받은 데이터 확인
     user_id = user.id
     logger.info(f"User '{user_id}' sent request for image generation: {request_data.model_dump_json(indent=2)}")
 
@@ -79,7 +77,7 @@ async def image_generation_request(
     #    예: response = await grpc_client.generate_image(**ai_server_request)
 
     # 4. 임시 결과 이미지 
-    temp_image_url = "/preview/sd_sample_1.jpg"
+    temp_image_url = "/preview/sd_sample_3.jpg"
     final_seed = request_data.seed if request_data.seed != -1 else 12345
     
     # 5. Supabase에 저장할 데이터 준비
