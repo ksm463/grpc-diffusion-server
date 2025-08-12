@@ -1,4 +1,3 @@
-import sys
 from loguru import logger
 from typing import TYPE_CHECKING
 

@@ -2,35 +2,18 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>서버 정보 페이지</title>
+  <title>gRPC 정보 페이지</title>
   <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
   <link rel="stylesheet" href="/web/static/css/_navbar.css">
-  <link rel="stylesheet" href="/web/static/css/main.css">
+  <link rel="stylesheet" href="/web/static/css/info.css">
 </head>
 <body>
   {% include 'partials/_navbar.html' %}
   <div id="container">
-    <div class="container-header">서버 정보 페이지</div>
+    <div class="container-header">gRPC 정보 페이지</div>
 
     <main id="app">
       <div id="main-page-content" class="page-content active">
-        <section id="host-system-info-section">
-          <h2>Host System Information</h2>
-          <div id="hostSystemInfo"> <p>Host IP Address: <span id="hostIpAddressInfo">Loading...</span></p>
-            <p>Host OS Version: <span id="hostOsVersionInfo">Loading...</span></p>
-            <p>Host Timezone: <span id="hostTimezoneInfo">Loading...</span></p>
-            </div>
-        </section>
-
-        <section id="client-info-section">
-          <h2>Client Information</h2>
-          <div id="clientInfo">
-            <p>User Agent: <span id="userAgentInfo">Loading...</span></p>
-            <p>Client IP Address: <span id="clientIpAddressInfo">Loading...</span></p>
-            <p>Screen Resolution: <span id="screenResolutionInfo">Loading...</span></p>
-          </div>
-        </section>
-
         <section id="grpc-info-section">
           <h2>gRPC Port Information</h2>
           <div id="grpcPortInfo">Loading... <span class="loader"></span></div>
@@ -50,6 +33,6 @@
   </div>
 
   <script src="/web/static/js/auth.js"></script>
-  <script src="/web/static/js/main.js"></script>
+  <script src="/web/static/js/info.js"></script>
 </body>
 </html>

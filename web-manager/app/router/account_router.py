@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from typing import List
 from supabase import Client
 from gotrue.errors import AuthApiError
 
-from database.schemas import UserCreate, UserLogin, UserRead, UpdatePasswordRequest
+from database.auth_schemas import UserCreate, UserLogin, UserRead, UpdatePasswordRequest
 from database.supabase import get_supabase_client, get_supabase_admin_client
 from service.auth_service import get_current_user, get_current_superuser
 from utility.request import get_logger
@@ -23,14 +23,12 @@ async def signup(
     새로운 사용자 등록
     """
     try:
-        # Supabase에 사용자 생성을 요청
         sign_up_data = {"email": user_credentials.email, "password": user_credentials.password}
         response = supabase.auth.sign_up(sign_up_data)
         logger.info(f"User registration initiated for {response.user.email}")
         return {"message": "User created successfully. Please check your email to confirm."}
     except Exception as e:
         logger.error(f"Error during user registration: {e}", exc_info=True)
-        # Supabase API는 오류 발생 시 gotrue.errors.AuthApiError 예외를 발생
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 # --- 로그인 ---
@@ -49,13 +47,12 @@ async def login(
             {"email": form_data.email, "password": form_data.password}
         )
         logger.info(f"User {auth_response.user.email} logged in successfully.")
-        # 클라이언트는 access_token과 refresh_token을 저장
         response.set_cookie(
             key="access_token",
             value=auth_response.session.access_token,
             httponly=True,
             samesite="lax",
-            secure=False # 개발 환경에서는 False, 배포(HTTPS) 환경에서는 True로 설정
+            secure=False
         )
         
         return {
@@ -74,21 +71,33 @@ async def login(
 # --- 로그아웃 API ---
 @account_router.post("/auth/logout", tags=["auth"], status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
+    request: Request,
     response: Response,
     user: SupabaseUser = Depends(get_current_user),
-    supabase_admin: Client = Depends(get_supabase_admin_client),
+    supabase: Client = Depends(get_supabase_client),
     logger=Depends(get_logger)
 ):
+    token_from_header = request.headers.get("authorization", "").replace("Bearer ", "")
+    token = token_from_header or request.cookies.get("access_token")
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication token not found.")
+
     try:
-        supabase_admin.auth.admin.sign_out(uid=user.id)
+        # get_user()를 호출하여 클라이언트의 인증 컨텍스트를 설정
+        supabase.auth.get_user(token)
+        supabase.auth.sign_out()
+        
         response.delete_cookie("access_token")
-        logger.info(f"All sessions for user {user.email} (ID: {user.id}) have been invalidated.")
+        logger.info(f"User {user.email} (ID: {user.id}) has been successfully signed out.")
+        
     except Exception as e:
         logger.error(f"Error during sign out for user {user.email}: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Supabase sign out failed: {e}"
+            status_code=500,
+            detail=f"An error occurred during sign out: {e}"
         )
+        
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # --- 인증 라우트 ---
@@ -153,9 +162,7 @@ async def list_all_users(
     """
     logger.info(f"Admin user '{admin_user.email}' requested to list all users.")
     try:
-        # supabase-py v2부터 list_users()는 사용자 리스트를 직접 반환합니다.
         users_list = supabase_admin.auth.admin.list_users()
-        # .users 속성 없이 리스트를 바로 반환합니다.
         return users_list
     except Exception as e:
         logger.error(f"Error listing users: {e}", exc_info=True)

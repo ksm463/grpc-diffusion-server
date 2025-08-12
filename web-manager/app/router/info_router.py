@@ -3,13 +3,13 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pathlib import Path
 import os
 
-from utility.request import get_manager_config, get_server_config, get_logger
+from utility.request import get_server_config, get_logger
 
 
-get_router = APIRouter()
+info_router = APIRouter()
 
 
-@get_router.get("/api/main/host_system_info")
+@info_router.get("/api/info/host_system_info")
 async def get_host_system_information(request: Request, logger=Depends(get_logger)):
     # logger.debug(f"Client {request.client.host}: Requested host system information.")
 
@@ -25,29 +25,27 @@ async def get_host_system_information(request: Request, logger=Depends(get_logge
         "host_timezone": host_timezone
     })
 
-@get_router.get("/api/main/client_ip")
+@info_router.get("/api/info/client_ip")
 async def get_client_ip_address(request: Request, logger=Depends(get_logger)):
     client_ip = request.client.host
     logger.info(f"Client {client_ip}: Requested client IP address. Returning: {client_ip}")
     return JSONResponse(content={"client_ip": client_ip})
 
-@get_router.get("/api/main/grpc_info")
-async def get_dummy_main_info(request: Request, server_config = Depends(get_server_config), logger=Depends(get_logger)):
-    logger.debug("Serving grpc port data for /api/main/info")
+@info_router.get("/api/info/grpc_info")
+async def get_dummy_info_info(request: Request, server_config = Depends(get_server_config), logger=Depends(get_logger)):
+    logger.debug("Serving grpc port data for /api/info/grpc_info")
     
-    proto_file_path_str = server_config['grpc']['port']
-
-    dummy_grpc_port = proto_file_path_str
-    dummy_status = "Running (Temporary Data)"
+    grpc_port = server_config['grpc']['port']
+    status = "Running (Temporary Data)"
 
     return JSONResponse(content={
-        "grpc_port": dummy_grpc_port,
-        "server_status": dummy_status,
+        "grpc_port": grpc_port,
+        "server_status": status,
         "message": "This is temporary data. Real implementation needed."
     })
 
 
-@get_router.get("/api/main/proto", response_class=PlainTextResponse)
+@info_router.get("/api/info/proto", response_class=PlainTextResponse)
 async def get_proto_content(
     server_config = Depends(get_server_config),
     logger = Depends(get_logger)

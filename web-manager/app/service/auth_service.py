@@ -8,7 +8,6 @@ from database.supabase import get_supabase_client
 from utility.request import get_logger
 
 # 토큰은 클라이언트가 'Authorization: Bearer <TOKEN>' 형태로 전송
-# tokenUrl은 실제 로그인 엔드포인트 경로로 지정
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 async def get_current_user(
@@ -57,27 +56,3 @@ async def get_current_superuser(current_user: User = Depends(get_current_user)) 
             detail="The user doesn't have enough privileges"
         )
     return current_user
-
-# def get_authenticated_supabase_client(
-#     token: str = Depends(oauth2_scheme),
-#     supabase: Client = Depends(get_supabase_client)
-# ) -> Client:
-#     """
-#     토큰으로 세션이 설정된 Supabase 클라이언트를 반환합니다.
-#     """
-#     supabase.auth.set_session(token, "")
-#     return supabase
-
-# # 슈퍼유저(Superuser)를 확인하는 의존성
-# # Supabase에서는 보통 user_metadata에 역할을 저장하여 확인
-# async def get_current_superuser(current_user: User = Depends(get_current_user)) -> User:
-#     """
-#     현재 사용자가 슈퍼유저인지 확인
-#     Supabase의 user_metadata에 'role': 'admin'과 같이 저장되어 있다고 가정함
-#     """
-#     if "role" not in current_user.user_metadata or current_user.user_metadata["role"] != "admin":
-#         raise HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail="The user doesn't have enough privileges"
-#         )
-#     return current_user

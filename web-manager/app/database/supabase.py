@@ -1,30 +1,31 @@
-from configparser import ConfigParser
-from fastapi import Depends
-from supabase import create_client, Client
+from fastapi import Request, HTTPException, status
+from supabase import Client
 
-from app.utility.request import get_manager_config 
+# from app.utility.request import get_manager_config
 
 
-def get_supabase_client(config: ConfigParser = Depends(get_manager_config)) -> Client:
+def get_supabase_client(request: Request) -> Client:
     """
-    설정 파일에서 정보를 읽어 Supabase 클라이언트를 반환하는 의존성 함수
+    app.state에 저장된 익명(anon) 키 Supabase 클라이언트를 반환하는 의존성 함수
+    (이 함수를 만들려면 main.py lifespan에도 anon key 클라이언트 생성 로직이 필요합니다.)
     """
-    supabase_url = config['SUPABASE']['URL']
-    supabase_key = config['SUPABASE']['KEY']
-    
-    if not supabase_url or not supabase_key:
-        raise ValueError("Supabase URL and Key must be set in manager_config.ini")
-        
-    return create_client(supabase_url, supabase_key)
+    try:
+        # main.py lifespan에서 app.state.supabase_client = create_client(...) 를 추가해야 함
+        client = request.app.state.supabase_client 
+        if client is None:
+            raise HTTPException(status_code=500, detail="Supabase client not initialized")
+        return client
+    except AttributeError:
+        raise HTTPException(status_code=500, detail="Supabase client not found in app state")
 
-def get_supabase_admin_client(config: ConfigParser = Depends(get_manager_config)) -> Client:
+def get_supabase_admin_client(request: Request) -> Client:
     """
-    설정 파일에서 정보를 읽어 Supabase 어드민 클라이언트를 반환하는 의존성 함수
+    app.state에 저장된 어드민(service_role) Supabase 클라이언트를 반환하는 의존성 함수
     """
-    supabase_url = config['SUPABASE']['URL']
-    supabase_service_key = config['SUPABASE']['SERVICE_KEY']
-
-    if not supabase_url or not supabase_service_key:
-        raise ValueError("Supabase URL and Service Key must be set in manager_config.ini")
-        
-    return create_client(supabase_url, supabase_service_key)
+    try:
+        client = request.app.state.supabase_admin_client
+        if client is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Supabase admin client not initialized")
+        return client
+    except AttributeError:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Supabase admin client not found in app state")

@@ -11,8 +11,8 @@ templates = Jinja2Templates(directory="/web-manager/app/web/templates")
 
 @page_router.get("/", include_in_schema=False, dependencies=[Depends(get_current_user)])
 async def root_redirect(request: Request, logger = Depends(get_logger)):
-    logger.info(f"Accessed main page. Request method: {request.method}")
-    return templates.TemplateResponse("main.html", {"request": request, "user": None})
+    logger.info(f"Accessed studio page. Request method: {request.method}")
+    return templates.TemplateResponse("studio.html", {"request": request, "user": None})
 
 @page_router.get("/login", response_class=HTMLResponse)
 async def load_login_page(request: Request, logger = Depends(get_logger)):
@@ -24,20 +24,20 @@ async def load_create_account_page(request: Request, logger = Depends(get_logger
     logger.info(f"Received create_account page load request: {request.method}")
     return templates.TemplateResponse("users/create_account.html", {"request": request, "user": None})
 
-@page_router.get("/main", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
-async def load_main_page(request: Request, logger = Depends(get_logger)):
-    logger.info(f"Accessed main page. Request method: {request.method}")
-    return templates.TemplateResponse("main.html", {"request": request, "user": None})
+@page_router.get("/info", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
+async def load_info_page(request: Request, logger = Depends(get_logger)):
+    logger.info(f"Accessed info page. Request method: {request.method}")
+    return templates.TemplateResponse("info.html", {"request": request, "user": None})
 
 @page_router.get("/studio", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_test_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received studio page load request: {request.method}")
     return templates.TemplateResponse("studio.html", {"request": request, "user": None})
 
-@page_router.get("/folder", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
-async def load_folder_page(request: Request, logger = Depends(get_logger)):
-    logger.info(f"Received folder page load request: {request.method}")
-    return templates.TemplateResponse("folder.html", {"request": request, "user": None})
+@page_router.get("/gallery", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
+async def load_gallery_page(request: Request, logger = Depends(get_logger)):
+    logger.info(f"Received gallery page load request: {request.method}")
+    return templates.TemplateResponse("gallery.html", {"request": request, "user": None})
 
 @page_router.get("/user_manage", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_user_manage_page(request: Request, logger = Depends(get_logger)):

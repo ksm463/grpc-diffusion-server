@@ -11,7 +11,6 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-
 class UserRead(BaseModel):
     id: uuid.UUID
     email: EmailStr
@@ -19,7 +18,6 @@ class UserRead(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class UserUpdate(BaseModel):
     password: str | None = None
