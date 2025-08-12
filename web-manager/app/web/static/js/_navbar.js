@@ -1,5 +1,3 @@
-// /web/static/js/_navbar.js
-
 document.addEventListener('DOMContentLoaded', () => {
     checkLoginStatus();
 
@@ -47,18 +45,22 @@ async function handleLogout() {
             }
         });
 
-        if (!response.ok) {
-            console.error('Server logout failed:', await response.json());
+        if (response.ok) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            
+            alert('성공적으로 로그아웃되었습니다.');
+            
+            // 다른 API 호출이 발생하지 않도록 페이지를 바로 이동
+            window.location.href = '/login';
+        } else {
+            // 서버 로그아웃 실패 시 (예: 네트워크 문제, 서버 다운)
+            const errorData = await response.json();
+            console.error('Server logout failed:', errorData);
+            alert(`로그아웃에 실패했습니다: ${errorData.detail || '서버 오류'}`);
         }
-
     } catch (error) {
         console.error('Error during logout request:', error);
-    } finally {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-
-        alert('성공적으로 로그아웃되었습니다.');
-        checkLoginStatus();
-        window.location.href = '/login';
+        alert('로그아웃 중 오류가 발생했습니다.');
     }
 }

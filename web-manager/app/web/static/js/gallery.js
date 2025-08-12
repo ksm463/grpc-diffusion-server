@@ -8,7 +8,7 @@ async function fetchMyImages() {
 
     try {
         // auth.js의 fetchWithAuth 함수를 사용하거나 직접 fetch를 구현
-        const response = await fetch('/gallery/api/my-images', {
+        const response = await fetch('/api/gallery/my-images', {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
@@ -28,7 +28,7 @@ async function fetchMyImages() {
         if (images.length === 0) {
             placeholder.textContent = '아직 생성한 이미지가 없습니다.';
         } else {
-            placeholder.style.display = 'none'; // 플레이스홀더 숨기기
+            placeholder.style.display = 'none';
             images.forEach(image => {
                 const card = createImageCard(image);
                 galleryGrid.innerHTML += card;

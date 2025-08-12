@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pathlib import Path
 import os
 
-from utility.request import get_manager_config, get_server_config, get_logger
+from utility.request import get_server_config, get_logger
 
 
 info_router = APIRouter()
@@ -35,14 +35,12 @@ async def get_client_ip_address(request: Request, logger=Depends(get_logger)):
 async def get_dummy_info_info(request: Request, server_config = Depends(get_server_config), logger=Depends(get_logger)):
     logger.debug("Serving grpc port data for /api/info/grpc_info")
     
-    proto_file_path_str = server_config['grpc']['port']
-
-    dummy_grpc_port = proto_file_path_str
-    dummy_status = "Running (Temporary Data)"
+    grpc_port = server_config['grpc']['port']
+    status = "Running (Temporary Data)"
 
     return JSONResponse(content={
-        "grpc_port": dummy_grpc_port,
-        "server_status": dummy_status,
+        "grpc_port": grpc_port,
+        "server_status": status,
         "message": "This is temporary data. Real implementation needed."
     })
 

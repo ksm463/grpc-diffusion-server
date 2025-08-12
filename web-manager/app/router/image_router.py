@@ -3,7 +3,7 @@ from typing import List
 from supabase import Client
 from gotrue.types import User as SupabaseUser
 
-from database.schemas import ImageCreationRequest, ImageGenerationResponse, ImageRecord
+from database.image_schemas import ImageCreationRequest, ImageGenerationResponse, ImageRecord
 from database.supabase import get_supabase_admin_client
 from service.image_requester import images_paginated, image_generation_request
 from service.auth_service import get_current_user
@@ -13,7 +13,7 @@ from utility.request import get_manager_config, get_server_config, get_logger
 image_router = APIRouter()
 
 
-@image_router.post("/generate")
+@image_router.post("/api/studio/generate")
 async def generate_image(
     request_data: ImageCreationRequest,
     user: dict = Depends(get_current_user),
@@ -37,12 +37,12 @@ async def generate_image(
     return response
 
 @image_router.get(
-    "/gallery/api/my-images", 
-    response_model=List[ImageRecord] # 응답 모델을 ImageRecord 리스트로 변경
+    "/api/gallery/my-images", 
+    response_model=List[ImageRecord]
 )
 async def get_my_images(
     user: SupabaseUser = Depends(get_current_user),
-    db: Client = Depends(get_supabase_admin_client), # --- DB 클라이언트 주입 추가 ---
+    db: Client = Depends(get_supabase_admin_client),
     logger=Depends(get_logger),
     page: int = Query(1, ge=1),
     limit: int = Query(12, ge=1, le=100)

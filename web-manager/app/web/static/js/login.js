@@ -5,19 +5,17 @@ loginForm.addEventListener('submit', async function(event) {
     event.preventDefault();
     errorMessageDiv.textContent = '';
 
-    // FormData 대신 각 input에서 직접 값을 가져옵니다.
+    // FormData 대신 각 input에서 직접 값을 가져옴
     const email = loginForm.elements.email.value;
     const password = loginForm.elements.password.value;
 
     try {
-        // 이전에 정의한 Supabase 로그인 엔드포인트를 호출합니다.
+        // 이전에 정의한 Supabase 로그인 엔드포인트를 호출
         const response = await fetch('/auth/db/login', {
             method: 'POST',
-            // 헤더를 'application/json'으로 설정합니다.
             headers: {
                 'Content-Type': 'application/json',
             },
-            // Body를 JSON 문자열로 변환하여 전송합니다.
             body: JSON.stringify({
                 email: email,
                 password: password,
@@ -27,15 +25,15 @@ loginForm.addEventListener('submit', async function(event) {
         const responseData = await response.json();
 
         if (response.ok) { // 로그인 성공 시 (상태 코드 200-299)
-            // 서버로부터 받은 access_token과 refresh_token을 브라우저의 localStorage에 저장합니다.
+            // 서버로부터 받은 access_token과 refresh_token을 브라우저의 localStorage에 저장
             localStorage.setItem('access_token', responseData.access_token);
             localStorage.setItem('refresh_token', responseData.refresh_token);
             
             console.log('Login successful. Token stored.');
-            window.location.href = '/studio'; // 스튜디오 페이지로 리디렉션
+            window.location.href = '/studio';
 
         } else { // 로그인 실패 시
-            // 서버에서 보낸 에러 메시지를 표시합니다.
+            // 서버에서 보낸 에러 메시지를 표시
             const messageToDisplay = responseData.detail || '아이디 또는 비밀번호가 잘못되었습니다.';
             console.error('Login failed:', response.status, responseData);
             errorMessageDiv.textContent = messageToDisplay;

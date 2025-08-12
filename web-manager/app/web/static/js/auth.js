@@ -65,7 +65,7 @@
   };
 
   /**
-   * [핵심] 페이지 로드 시 인증 상태를 확인하고 비인증 시 리디렉션
+   * 페이지 로드 시 인증 상태를 확인하고 비인증 시 리디렉션
    * 이 함수는 auth.js가 로드될 때 즉시 실행
    */
   function checkAuthenticationAndRedirect() {
