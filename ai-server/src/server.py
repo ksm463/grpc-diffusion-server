@@ -21,9 +21,6 @@ async def run_server(config_path: str):
     # --- 1. 로거 설정 ---
     setup_logger(config_path)
 
-    config = configparser.ConfigParser()
-    config.read(config_path)
-
     # --- 2. 프로세스 시작 및 gRPC 서버 실행 ---
     worker_processes = []
     server = None
@@ -84,20 +81,17 @@ async def run_server(config_path: str):
         server = grpc.server(options=options)
         
         # Servicer 생성 및 추가
-        queue_key = config.get('STABLEDIFFUSION', 'QUEUE_KEY', fallback=default_queue_key)
-        result_key_prefix = config.get('STABLE_DIFFUSION', 'RESULT_KEY_PREFIX')
-        processing_timeout = int(config.get('STABLEDIFFUSION', 'TIMEOUT', fallback=default_timeout))
+        queue_key = config.get('STABLEDIFFUSION', 'QUEUE_KEY')
+        result_key_prefix = config.get('STABLEDIFFUSION', 'RESULT_KEY_PREFIX')
+        processing_timeout = int(config.get('STABLEDIFFUSION', 'TIMEOUT'))
 
-        servicer = ImageProcessingServicer(
-            redis_client,
-            concurrent_tasks,
-            queue_key,
-            image_prefix,
-            processed_prefix,
-            processing_timeout,
-            config,
+        servicer = DiffusionProcessingServicer(
+            redis_client=redis_client,
+            queue_key=queue_key,
+            result_key_prefix=result_key_prefix,
+            processing_timeout=processing_timeout,
         )
-        diffusion_processing_pb2_grpc.add_DiffusionProcessingServicer_to_server(servicer, server)
+        diffusion_processing_pb2_grpc.add_ImageGeneratorServicer_to_server(servicer, server)
         
         server.add_insecure_port(f'[::]:{grpc_port}')
         await server.start()
@@ -139,7 +133,7 @@ if __name__ == '__main__':
         print("Multiprocessing start method already set or 'spawn' not available with force=True.")
 
     parser = argparse.ArgumentParser(description='Image Processing Server')
-    parser.add_argument('--config', type=str, default='./server_config.ini', help='Path to the configuration file')
+    parser.add_argument('--config', type=str, default='./ai_server_config.ini', help='Path to the configuration file')
     args = parser.parse_args()
 
     try:
