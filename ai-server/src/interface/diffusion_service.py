@@ -10,8 +10,9 @@ import asyncio
 import multiprocessing
 from loguru import logger
 
-import diffusion_processing_pb2
-import diffusion_processing_pb2_grpc
+from interface import diffusion_processing_pb2
+from interface import diffusion_processing_pb2_grpc
+from worker.adpater import RedisSDAdapter
 
 class DiffusionProcessingServicer(diffusion_processing_pb2_grpc.ImageGeneratorServicer):
     """
@@ -162,7 +163,7 @@ def create_worker_subprocess(config_path: str, worker_type: str, process_name: s
     }
 
     adapter_process = multiprocessing.Process(
-        target=RedisLLEAdapter.run_adapter_in_subprocess,
+        target=RedisSDAdapter.run_adapter_in_subprocess,
         args=process_args,
         kwargs=process_kwargs,
         name=process_name,

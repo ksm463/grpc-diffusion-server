@@ -1,33 +1,67 @@
+import sys
+import configparser
+from pathlib import Path
 from loguru import logger
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from loguru import Logger
+# 한 번만 설정되도록 플래그 사용
+_is_logger_configured = False
 
-def setup_logger(log_path: str) -> "Logger":
-    """
-    loguru 로거(logger)를 설정
-    """
+def setup_logger(config_path: str):
+    """설정 파일을 읽어 loguru 로거를 설정"""
+    global _is_logger_configured
+    if _is_logger_configured:
+        return
+
+    config = configparser.ConfigParser()
+    config.read(config_path)
+
+    log_dir = config['GLOBAL']['LOG_FILE_PATH']
+    log_name = config['GLOBAL']['LOG_FILE_NAME']
+    log_level = config['GLOBAL']['LOG_LEVEL']
+    log_rotation = config['GLOBAL']['LOG_ROTATION']
+    log_retention = int(config['GLOBAL']['LOG_RETENTION'])
+    log_encoding = config['GLOBAL']['LOG_ENCODING']
+    # log_file_path = str(Path(log_dir) / f"{log_name}.log")
+    
+    # 파일 경로 생성
+    debug_log_path = str(Path(log_dir) / f"{log_name}_debug.log")
+    info_log_path = str(Path(log_dir) / f"{log_name}_info.log")
+
+    # 기존 설정을 모두 제거하고 새로 추가
     logger.remove()
 
-    # 콘솔 출력 로거
-    # logger.add(
-    #     sys.stdout,
-    #     level="INFO",
-    #     format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> [<level>{level.name}</level>] <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
-    # )
-
-    # 파일 출력 로거
+    # 파일 로깅 설정
     logger.add(
-        log_path,
-        level="INFO",
-        format="{time:YYYY-MM-DD HH:mm:ss} [{level.name}] {file.name}:{line} - {message}",
-        rotation="30 MB",  # 30MB 이후 새 파일 생성
-        retention=5,  # 최대 5개의 로그 파일 유지
-        encoding='utf-8',
-        enqueue=True,      # 비동기 및 다중 프로세스 환경 로깅
-        backtrace=True,    # 예외 발생 시 스택 추적
-        diagnose=True      # 예외 발생 시 상세 정보 추가
+        debug_log_path,
+        level=log_level.upper(), # 설정 파일의 레벨을 따름 (e.g., "DEBUG")
+        rotation=log_rotation,
+        retention=log_retention,
+        enqueue=True,
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {process.name}:{process.id} | {name}:{function}:{line} - {message}",
+        encoding=log_encoding,
+        backtrace=True,
+        diagnose=True
     )
 
-    return logger
+    # 2. INFO 레벨 이상을 기록하는 파일 로거
+    logger.add(
+        info_log_path,
+        level="INFO", # INFO 레벨 이상만 기록
+        rotation=log_rotation,
+        retention=log_retention,
+        enqueue=True,
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {process.name}:{process.id} | {name}:{function}:{line} - {message}",
+        encoding=log_encoding,
+        backtrace=True,
+        diagnose=True
+    )
+
+    # 콘솔 로깅 설정 (INFO 레벨 이상)
+    logger.add(
+        sys.stdout, # print 대신 sys.stdout을 사용함
+        level="INFO",
+        format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{process.name}:{process.id}</cyan> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
+    )
+    
+    _is_logger_configured = True
+    logger.info("Logger has been configured.")
