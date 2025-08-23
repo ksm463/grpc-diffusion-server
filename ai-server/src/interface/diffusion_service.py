@@ -24,6 +24,7 @@ class DiffusionProcessingServicer(diffusion_processing_pb2_grpc.ImageGeneratorSe
         redis_client: redis.Redis,
         queue_key: str,
         result_key_prefix: str,
+        result_channel_prefix: str,
         processing_timeout: int,
     ):
         self.redis_client = redis_client
@@ -32,7 +33,7 @@ class DiffusionProcessingServicer(diffusion_processing_pb2_grpc.ImageGeneratorSe
         self.timeout = processing_timeout
         
         # Redis Pub/Sub 채널을 위한 접두사
-        self.result_channel_prefix = "result:channel:"
+        self.result_channel_prefix = result_channel_prefix
         
         logger.info(f"DiffusionProcessingServicer initialized.")
         logger.info(f"Using job queue: '{self.queue_key}'")

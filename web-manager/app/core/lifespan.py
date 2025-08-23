@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pathlib import Path
 from supabase import create_client, Client
+import os
 
 from app.core.config import manager_config, server_config
 from utility.logger import setup_logger
@@ -19,9 +20,10 @@ async def lifespan(app: FastAPI):
     
     # Supabase 클라이언트 생성
     logger.info("Creating Supabase clients...")
-    supabase_url = manager_config['SUPABASE']['URL']
-    supabase_key = manager_config['SUPABASE']['KEY'] 
-    supabase_service_key = manager_config['SUPABASE']['SERVICE_KEY']
+    supabase_url = os.getenv('SUPABASE_URL', manager_config['SUPABASE']['URL'])
+    supabase_key = os.getenv('SUPABASE_KEY', manager_config['SUPABASE']['KEY'])
+    supabase_service_key = os.getenv('SUPABASE_SERVICE_KEY', manager_config['SUPABASE']['SERVICE_KEY'])
+    
     
     if not all([supabase_url, supabase_key, supabase_service_key]):
         error_msg = "Supabase URL, Key, and Service Key must be set in manager_config.ini"

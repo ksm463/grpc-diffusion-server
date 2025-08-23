@@ -22,15 +22,17 @@ class StableDiffusionWorker:
         self.device_id = device_id
         self.logger = logger
         self.pid = os.getpid()
-        self.logger.info(f"Loading model from {self.model_path}...")
+        self.logger.info(f"Loading model from {self.model_path} across 2 GPUs...")
         self.device = f"cuda:{self.device_id}"
+        
         self.pipe = DiffusionPipeline.from_pretrained(
             self.model_path,
-            torch_dtype=torch.float16,
-            use_safetensors=True
+            torch_dtype=torch.float32, # 안정성을 위해 float32 사용
+            use_safetensors=True,
+            device_map="balanced" # <--- 이 부분이 핵심입니다.
         )
-        self.pipe.enable_model_cpu_offload() 
-        self.logger.info("Model loaded successfully.")
+
+        self.logger.info("Model loaded and distributed across GPUs successfully.")
 
         self._init_queue()
         self._init_async_components()
@@ -130,14 +132,19 @@ class StableDiffusionWorker:
                 except asyncio.TimeoutError:
                     continue
                 
-                start_time = time.perf_counter()
-
-                # PIL Image를 PNG 형식의 bytes로 변환
-                image = item['images'][0] # 첫 번째 이미지만 사용
-                byte_arr = io.BytesIO()
-                image.save(byte_arr, format='PNG')
-                image_bytes = byte_arr.getvalue()
+                prompt_preview = item.get('prompt', 'N/A')[:50] + '...'
+                self.logger.info(f"Postprocessing started for prompt: '{prompt_preview}'")
                 
+                start_time = time.perf_counter()
+                
+                image = item['images'][0]
+                byte_arr = io.BytesIO()
+                if image.mode == 'RGBA':
+                    self.logger.info("Image is in RGBA mode, converting to RGB for JPEG format.")
+                    image = image.convert('RGB')
+                image.save(byte_arr, format='JPEG')
+                image_bytes = byte_arr.getvalue()
+
                 postprocessing_time = time.perf_counter() - start_time
 
                 output_data = item.copy()
@@ -146,6 +153,8 @@ class StableDiffusionWorker:
                 output_data['timings']['postprocessing_time'] = postprocessing_time
 
                 await self.output_queue.put(output_data)
+                
+                self.logger.info(f"Postprocessing finished in {postprocessing_time:.4f} seconds. Item moved to output_queue.")
 
         except Exception as e:
             self.logger.error(f"Error in postprocessing: {e}\n{traceback.format_exc()}")
@@ -156,10 +165,10 @@ class StableDiffusionWorker:
             print("Warning: Logger not provided.")
             import logging
             self.logger = logging.getLogger("sd_worker")
-            if not self.logger.hasHandlers(): # 핸들러 중복 추가 방지
+            if not self.logger.hasHandlers():
                 logging.basicConfig(level=logging.INFO)
 
-        self.logger.info(f"Starting sd_worker_trt on device {self.device_id}...")
+        self.logger.info(f"Starting sd_worker on device {self.device_id}...")
         self.asyncio_event.set()
 
         try:
@@ -168,18 +177,14 @@ class StableDiffusionWorker:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
 
-        # Add signal handlers for graceful shutdown
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, self._signal_handler)
 
-        # Create and store tasks
         self.tasks.append(asyncio.create_task(self.preprocessing(), name="Preprocessing"))
         self.tasks.append(asyncio.create_task(self.inference(), name="Inference"))
         self.tasks.append(asyncio.create_task(self.postprocessing(), name="Postprocessing"))
 
-        # Wait for tasks to complete (e.g., if shutdown is triggered)
         await asyncio.gather(*self.tasks, return_exceptions=True)
-
         self.logger.info("All worker tasks finished.")
 
     def _signal_handler(self):
