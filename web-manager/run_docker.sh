@@ -24,6 +24,7 @@ docker run \
     -p ${port_num}7000:7000 \
     -p ${port_num}8000:8000 \
     --name ${CONTAINER_NAME} \
+    --network ${NETWORK_NAME} \
     --privileged \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v ${fastapi_path}:/web-manager \
@@ -31,10 +32,12 @@ docker run \
     -e HOST_IP="$HOST_IP" \
     -e HOST_OS_VERSION="$HOST_OS_VERSION" \
     -e HOST_TIMEZONE="$HOST_TIMEZONE" \
+    -e SUPABASE_URL="http://${HOST_IP}:54321" \
+    -e SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0" \
+    -e SUPABASE_SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU" \
     --shm-size 20g \
     --restart=always \
     -w /web-manager \
     ${IMAGE_NAME}:${TAG} \
     tail -f /dev/null
 
-# docker network connect ${NETWORK_NAME} ${CONTAINER_NAME}

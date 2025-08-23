@@ -6,13 +6,23 @@ set -e
 echo "✅ 1. NVM 및 Node.js 환경 확인..."
 
 export NVM_DIR="$HOME/.nvm"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    source "$NVM_DIR/nvm.sh"
-else
-    echo "오류: NVM이 설치되어 있지 않거나 경로를 찾을 수 없습니다."
-    echo "NVM을 먼저 설치해주세요: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
-    exit 1
+# NVM이 설치되어 있는지 먼저 확인
+if [ ! -s "$NVM_DIR/nvm.sh" ]; then
+    echo "NVM이 설치되어 있지 않습니다. 지금 설치하시겠습니까? (y/n)"
+    read -r answer
+    if [ "$answer" = "y" ]; then
+        echo "NVM 설치를 시작합니다..."
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+        echo "NVM 설치가 완료되었습니다. 터미널을 다시 시작한 후 스크립트를 재실행해주세요."
+        exit 0
+    else
+        echo "NVM 설치를 취소했습니다. 스크립트를 종료합니다."
+        exit 1
+    fi
 fi
+
+# NVM 환경 불러오기
+source "$NVM_DIR/nvm.sh"
 
 # Node.js LTS 버전이 설치되어 있지 않으면 설치
 if ! nvm list | grep -q "lts"; then

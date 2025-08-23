@@ -83,12 +83,14 @@ async def run_server(config_path: str):
         # Servicer 생성 및 추가
         queue_key = config.get('STABLEDIFFUSION', 'QUEUE_KEY')
         result_key_prefix = config.get('STABLEDIFFUSION', 'RESULT_KEY_PREFIX')
+        result_channel_prefix = config.get('STABLEDIFFUSION', 'RESULT_CHANNEL_PREFIX')
         processing_timeout = int(config.get('STABLEDIFFUSION', 'TIMEOUT'))
 
         servicer = DiffusionProcessingServicer(
             redis_client=redis_client,
             queue_key=queue_key,
             result_key_prefix=result_key_prefix,
+            result_channel_prefix=result_channel_prefix,
             processing_timeout=processing_timeout,
         )
         diffusion_processing_pb2_grpc.add_ImageGeneratorServicer_to_server(servicer, server)

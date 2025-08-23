@@ -162,6 +162,8 @@ class RedisSDAdapter:
                 continue
             short_uuid = job_uuid[:8]
             
+            self.logger.info(f"[{short_uuid}] Got item from output_queue. Preparing to send to Redis.")
+            
             try:
                 result_data_to_pack = {
                     'image_data': output_data_dict.get('image_data'),
@@ -169,10 +171,12 @@ class RedisSDAdapter:
                 }
 
                 # 1. msgpack으로 직렬화
+                self.logger.debug(f"[{short_uuid}] Packing result data with msgpack...")
                 packed_result = msgpack.packb(result_data_to_pack, use_bin_type=True)
                 
                 # 2. 결과 저장
                 result_key = f"{self.redis_result_prefix}{job_uuid}"
+                self.logger.debug(f"[{short_uuid}] Saving result to Redis key: {result_key}")
                 await self.loop.run_in_executor(
                     None,
                     lambda: self.redis_client.set(result_key, packed_result, ex=self.redis_ttl)
@@ -180,6 +184,7 @@ class RedisSDAdapter:
                 
                 # 3. 완료 신호 전송 ('SUCCESS' 메시지)
                 result_channel = f"{self.redis_result_channel_prefix}{job_uuid}"
+                self.logger.debug(f"[{short_uuid}] Publishing SUCCESS notification to channel: {result_channel}")
                 await self.loop.run_in_executor(
                     None,
                     lambda: self.redis_client.publish(result_channel, 'SUCCESS')

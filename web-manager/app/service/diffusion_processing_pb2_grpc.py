@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-import diffusion_processing_pb2 as diffusion__processing__pb2
+from service import diffusion_processing_pb2 as diffusion__processing__pb2
 
 GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__

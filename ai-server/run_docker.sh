@@ -10,13 +10,15 @@ grpc_ai_path=$(pwd)
 
 docker run \
     -it \
-    -p 50051:50051 \
+    --gpus all \
+    -p 20051:20051 \
     -p ${port_num}5000:5000 \
     -p ${port_num}8888:8888 \
     --name ${CONTAINER_NAME} \
+    --network ${NETWORK_NAME} \
     --privileged \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
-    -v ${grpc_ai_path}:/grpc-ai-server \
+    -v ${grpc_ai_path}:/ai-server \
     -v /etc/localtime:/etc/localtime:ro \
     -e DISPLAY=$DISPLAY \
     -e HOST_IP="$HOST_IP" \
@@ -24,7 +26,6 @@ docker run \
     -e HOST_TIMEZONE="$HOST_TIMEZONE" \
     --shm-size 20g \
     --restart=always \
-    -w /grpc-ai-server \
+    -w /ai-server \
     ${IMAGE_NAME}:${TAG}
 
-docker network connect ${NETWORK_NAME} ${CONTAINER_NAME}
