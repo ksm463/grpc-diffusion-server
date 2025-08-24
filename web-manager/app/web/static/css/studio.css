@@ -14,32 +14,42 @@ body {
     font-family: Arial, sans-serif;
     background-color: var(--body-bg-color);
     margin: 0;
-    padding-top: 50px;
+    /* [수정] padding-top 제거 */
+    /* padding-top: 60px; */ 
 }
 
 #container {
     width: 80%;
     max-width: 800px;
-    margin: 30px auto;
+    
+    /* [수정] 왼쪽 마진을 주어 네비게이션 바 공간 확보 */
+    margin: 30px auto 30px 250px; /* 상, 우, 하, 좌 (220px 바 너비 + 30px 여백) */
+
     background: var(--container-bg-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
     overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+#container:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .container-header {
     background-color: var(--secondary-bg-color);
     color: var(--primary-color);
-    padding: 25px 0;
+    padding: 20px 0;
     text-align: center;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: bold;
+    border-bottom: 1px solid #d0d0d0;
 }
 
 .content {
-    padding: 20px 30px 40px; 
-    text-align: left; 
+    padding: 25px 30px 35px;
+    text-align: left;
 }
 
 /* 입력 & 버튼 */
@@ -49,17 +59,18 @@ body {
 
 .input-group label {
     display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
+    font-weight: 500;
+    margin-bottom: 6px;
     color: var(--dark-text-color);
+    font-size: 15px;
 }
 
 #prompt-input {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
     box-sizing: border-box;
     resize: vertical;
     transition: border-color 0.3s, box-shadow 0.3s;
@@ -70,36 +81,44 @@ body {
 #prompt-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 5px rgba(157, 141, 241, 0.5);
+    box-shadow: 0 0 6px rgba(157, 141, 241, 0.4);
 }
 
 #generate-button {
     width: 100%;
-    padding: 15px;
-    font-size: 18px;
+    padding: 12px;
+    font-size: 16px;
     font-weight: bold;
     color: var(--light-text-color);
     background-color: var(--primary-color);
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 #generate-button:hover {
-    background-color: #8978d1;
+    background-color: #7e6ed9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 #generate-button:active {
-    transform: scale(0.99);
+    transform: scale(0.98);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 #generate-button:disabled {
-    background-color: #999;
+    background-color: #ccc;
+    color: #888;
     cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
 }
 
-/* 고급 설정 */
+
+/* ----- 고급 설정 (원본 스타일로 복원 시작) ----- */
 .advanced-settings {
     margin-top: 25px;
     border: 1px solid var(--border-color);
@@ -159,27 +178,32 @@ input[type="range"] {
     font-size: 14px;
     font-weight: bold;
 }
+
 #random-seed-button:hover {
     background-color: #f5be5b;
 }
+/* ----- 고급 설정 (원본 스타일로 복원 끝) ----- */
+
 
 /* 결과 영역 */
 .result-area {
-    margin-top: 30px;
+    margin-top: 25px;
 }
 
 .result-area h2 {
-    background-color: var(--primary-color);
-    color: var(--light-text-color);
-    padding: 1em 1.5em;
-    margin: -20px -30px 20px;
-    font-size: 1.2em;
-    border-bottom: none;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--dark-text-color);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
 }
 
 #result-image-wrapper {
-    width: 100%;
-    min-height: 512px;
+    width: 80%;
+    min-height: 410px;
+    margin-left: auto;
+    margin-right: auto;
     background-color: #f9f9f9;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -187,11 +211,12 @@ input[type="range"] {
     align-items: center;
     justify-content: center;
     position: relative;
+    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.05);
 }
 
 #result-image-wrapper p {
     color: #888;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 #result-image-wrapper img {
