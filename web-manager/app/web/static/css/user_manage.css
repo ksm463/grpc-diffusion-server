@@ -13,25 +13,17 @@ body {
     font-family: Arial, sans-serif;
     background-color: var(--body-bg-color);
     margin: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    box-sizing: border-box;
-    padding-top: 50px;
 }
 
 #container {
     width: 1100px;
     max-width: 95%;
-    margin: 30px auto;
     background: var(--container-bg-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     overflow: hidden;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
+    margin: 30px auto 30px 250px; /* 사이드바 레이아웃 마진 유지 */
 }
 
 .container-header {
@@ -48,7 +40,9 @@ main#app {
     flex-grow: 1;
 }
 
-section {
+/* [수정] 아래 모든 선택자 앞에 main#app을 추가하여 스타일 범위를 제한합니다. */
+
+main#app section {
     margin-bottom: 2em;
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -57,12 +51,7 @@ section {
     overflow: hidden;
 }
 
-h1, h2, h3 {
-    margin-top: 0;
-    color: var(--dark-text-color);
-}
-
-h2 {
+main#app h2 {
     background-color: var(--primary-color);
     color: var(--light-text-color);
     padding: 1em 1.5em;
@@ -71,35 +60,27 @@ h2 {
     border-bottom: none;
 }
 
-section > div, section > h3, section > pre, section > button, section > table {
-    padding: 0 1.5em;
-    margin-left: 0;
-    margin-right: 0;
-}
-section > h3 {
-    margin-top: 1em;
-}
-section > :last-child {
-    margin-bottom: 1.5em;
+main#app .section-content {
+    padding: 1.5em;
 }
 
-h3 {
+main#app h3 {
     color: #555;
     margin-bottom: 0.8em;
 }
 
-label {
+main#app label {
     display: block;
     margin-bottom: 0.5em;
     font-weight: bold;
     color: #444;
 }
 
-input[type="file"],
-input[type="text"],
-input[type="password"],
-input[type="email"],
-input[type="number"] {
+main#app input[type="file"],
+main#app input[type="text"],
+main#app input[type="password"],
+main#app input[type="email"],
+main#app input[type="number"] {
     padding: 0.8em;
     margin-bottom: 1em;
     border: 1px solid #ccc;
@@ -110,13 +91,13 @@ input[type="number"] {
     background-color: #f9f9f9;
 }
 
-input:focus {
+main#app input:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 5px rgba(157, 141, 241, 0.5);
 }
 
-button {
+main#app button {
     padding: 0.8em 1.5em;
     background-color: var(--primary-color);
     color: var(--light-text-color);
@@ -130,19 +111,20 @@ button {
     margin-top: 0.5em;
     margin-right: 0.5em;
 }
-button:last-of-type {
+
+main#app button:last-of-type {
     margin-right: 0;
 }
 
-button:hover {
+main#app button:hover {
     background-color: #8978d1;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(157, 141, 241, 0.2);
 }
-button:active {
+main#app button:active {
     transform: scale(0.98);
 }
-button:disabled {
+main#app button:disabled {
     background-color: #d0d0d0;
     color: #777;
     border-color: #bbb;
@@ -151,31 +133,17 @@ button:disabled {
     box-shadow: none;
 }
 
-.delete-user-btn {
+main#app .delete-user-btn {
     background-color: #dc3545;
     color: white;
     border-color: #bd2130;
 }
-.delete-user-btn:hover {
+main#app .delete-user-btn:hover {
     background-color: #c82333;
     border-color: #a11a27;
 }
 
-pre {
-    background-color: #eee;
-    padding: 1em;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-height: 250px;
-    overflow-y: auto;
-    font-size: 0.9em;
-    line-height: 1.4;
-    margin-bottom: 1em;
-}
-
-.info-display-area {
+main#app .info-display-area {
     font-family: monospace;
     background-color: #e9ecef;
     padding: 1em;
@@ -183,14 +151,13 @@ pre {
     border: 1px solid #ced4da;
     font-size: 0.95em;
     line-height: 1.5;
-    margin-top: 0.5em;
 }
-.info-display-area span {
+main#app .info-display-area span {
     font-weight: bold;
     color: #333;
 }
 
-.error-message {
+main#app .error-message {
     color: #721c24;
     font-weight: bold;
     margin-top: 1em;
@@ -199,32 +166,26 @@ pre {
     padding: 0.8em;
     border-radius: 4px;
 }
-pre.error-message {
-    background-color: #f8d7da;
-    color: #721c24;
-    border-color: #f5c6cb;
-    white-space: pre-wrap;
-}
 
-table {
+main#app table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1em;
     table-layout: auto;
 }
-th, td {
+main#app th, main#app td {
     border: 1px solid #ddd;
     padding: 0.75em;
     text-align: left;
     color: var(--dark-text-color);
 }
-th {
+main#app th {
     background-color: #e9e6ff;
     font-weight: bold;
 }
-tr:nth-child(even) {
+main#app tr:nth-child(even) {
     background-color: #f9f9f9;
 }
-tr:hover {
+main#app tr:hover {
     background-color: #f1f1f1;
 }
