@@ -114,6 +114,10 @@ class RedisSDAdapter:
 
                 job_data_dict = msgpack.unpackb(packed_job_data, raw=False)
                 
+                # job data 유효성 검사
+                job_uuid = job_data_dict['job_id']
+                prompt = job_data_dict['prompt']
+                
                 # job_id 키 확인
                 job_uuid = job_data_dict.get('job_id', 'unknown_uuid')
                 short_uuid = job_uuid[:8]
@@ -127,6 +131,12 @@ class RedisSDAdapter:
                 await self.sd_worker.input_queue.put(worker_input_item)
                 self.logger.debug(f"Put item {short_uuid} into SD worker input queue.")
                 
+            except KeyError as e:
+                error_message = f"Missing required field: {e}"
+                self.logger.error(f"Validation failed for job data: {error_message}")
+                # 클라이언트에게 실패를 알리는 로직
+                if job_uuid:
+                    await self._report_error_to_redis(job_uuid, error_message)
             except Exception as e:
                 self.logger.error(f"Error in Redis-to-Input loop (UUID: {job_uuid}): {e}\n{traceback.format_exc()}")
                 if not self._running:
@@ -160,41 +170,71 @@ class RedisSDAdapter:
             if not job_uuid:
                 self.logger.warning(f"Job received from worker has no UUID. Skipping. Data: {output_data_dict}")
                 continue
+
             short_uuid = job_uuid[:8]
             
             self.logger.info(f"[{short_uuid}] Got item from output_queue. Preparing to send to Redis.")
             
             try:
-                result_data_to_pack = {
-                    'image_data': output_data_dict.get('image_data'),
-                    'used_seed': output_data_dict.get('used_seed'),
-                }
+                status = output_data_dict.get('status', 'success')
+                if status == 'success': # 추론 성공
+                    self.logger.info(f"[{short_uuid}] Job finished successfully. Sending result to Redis.")
+                    
+                    # 1. 성공 결과 데이터 준비
+                    result_data_to_pack = {
+                        'image_data': output_data_dict.get('image_data'),
+                        'used_seed': output_data_dict.get('used_seed'),
+                    }
+                    packed_result = msgpack.packb(result_data_to_pack, use_bin_type=True)
+                    
+                    # 2. 결과 키 저장
+                    result_key = f"{self.redis_result_prefix}{job_uuid}"
+                    await self.loop.run_in_executor(
+                        None,
+                        lambda: self.redis_client.set(result_key, packed_result, ex=self.redis_ttl)
+                    )
+                    
+                    # 3. 'SUCCESS' 신호 전송
+                    result_channel = f"{self.redis_result_channel_prefix}{job_uuid}"
+                    await self.loop.run_in_executor(
+                        None,
+                        lambda: self.redis_client.publish(result_channel, 'SUCCESS')
+                    )
+                    self.logger.debug(f"[{short_uuid}] Published SUCCESS notification to channel '{result_channel}'")
 
-                # 1. msgpack으로 직렬화
-                self.logger.debug(f"[{short_uuid}] Packing result data with msgpack...")
-                packed_result = msgpack.packb(result_data_to_pack, use_bin_type=True)
-                
-                # 2. 결과 저장
-                result_key = f"{self.redis_result_prefix}{job_uuid}"
-                self.logger.debug(f"[{short_uuid}] Saving result to Redis key: {result_key}")
-                await self.loop.run_in_executor(
-                    None,
-                    lambda: self.redis_client.set(result_key, packed_result, ex=self.redis_ttl)
-                )
-                
-                # 3. 완료 신호 전송 ('SUCCESS' 메시지)
-                result_channel = f"{self.redis_result_channel_prefix}{job_uuid}"
-                self.logger.debug(f"[{short_uuid}] Publishing SUCCESS notification to channel: {result_channel}")
-                await self.loop.run_in_executor(
-                    None,
-                    lambda: self.redis_client.publish(result_channel, 'SUCCESS')
-                )
-                self.logger.debug(f"[{short_uuid}] Published completion notification to channel '{result_channel}'")
-                
+                else: # 추론 실패
+                    error_message = output_data_dict.get('error_message', 'Unknown error in worker.')
+                    self.logger.error(f"[{short_uuid}] Job failed in worker. Reporting error to Redis. Reason: {error_message}")
+                    await self._report_error_to_redis(job_uuid, error_message)
+
+                # 성공/실패 여부와 관계없이 큐 작업이 완료되었음을 알림
                 self.sd_worker.output_queue.task_done()
+
             except Exception as e:
                 self.logger.error(f"Error in Output-to-Redis processing (UUID: {job_uuid}): {e}\n{traceback.format_exc()}")
-        self.logger.info("Output-to-Redis loop finished.")
+                self.sd_worker.output_queue.task_done()
+
+    
+    async def _report_error_to_redis(self, job_uuid: str, error_message: str):
+        try:
+            result_channel = f"{self.redis_result_channel_prefix}{job_uuid}"
+            self.logger.debug(f"[{job_uuid[:8]}] Publishing ERROR notification to channel: {result_channel}")
+            
+            # 에러 메시지 저장
+            error_payload = msgpack.packb({'error': error_message}, use_bin_type=True)
+            result_key = f"{self.redis_result_prefix}{job_uuid}"
+            await self.loop.run_in_executor(
+                None,
+                lambda: self.redis_client.set(result_key, error_payload, ex=self.redis_ttl)
+            )
+            
+            # 클라이언트에 'ERROR' 신호
+            await self.loop.run_in_executor(
+                None,
+                lambda: self.redis_client.publish(result_channel, 'ERROR')
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to report error to Redis for UUID {job_uuid}: {e}")
 
     # redis 비동기 루프 실행
     async def start(self):
