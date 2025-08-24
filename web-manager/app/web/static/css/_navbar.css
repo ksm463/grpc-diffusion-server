@@ -1,74 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;500&display=swap');
+
 #main-nav {
-    background-color: #2c2c54;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #9D8DF1;
+    /* [수정] 위치 및 크기: 왼쪽 사이드바 형태로 변경 */
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 220px; /* 사이드바 너비 */
+    height: 100vh; /* 화면 전체 높이 */
+    
+    background: linear-gradient(180deg, #231a4f, #2c2c54); /* 그라데이션 방향 변경 */
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.25); /* 그림자 방향 변경 */
+    border-right: 1px solid #9D8DF1; /* border-bottom을 border-right로 변경 */
+    
+    /* [수정] Flexbox 방향: 내부 요소를 위아래로 배치 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    
+    padding: 20px 0; /* 위아래 패딩, 좌우는 0 */
     z-index: 1000;
     box-sizing: border-box;
-    height: 50px;
-  }
-  
-  /* 네비게이션 바 내부의 ul 목록 스타일 */
-  #main-nav ul {
+    font-family: 'Poppins', 'Roboto', sans-serif;
+}
+
+.nav-logo {
+    color: #EFEFEF;
+    text-decoration: none;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 0 25px 20px 25px; /* 로고 패딩 */
+    margin-bottom: 20px;
+    display: block;
+    border-bottom: 1px solid #4a4a7c;
+}
+
+#main-nav ul {
     list-style: none;
     padding: 0;
     margin: 0;
+    /* [수정] 메뉴 아이템을 세로로 정렬 */
     display: flex;
-    align-items: center;
-  }
-  
-  /* 네비게이션 바 내부의 li 목록 아이템 스타일 */
-  #main-nav ul li {
-    margin: 0 15px;
-  }
-  
-  /* 네비게이션 바 내부의 링크(a 태그) 스타일 */
-  #main-nav ul li a {
+    flex-direction: column;
+    width: 100%;
+}
+
+#main-nav ul li {
+    margin: 0;
+    width: 100%;
+}
+
+/* 링크와 버튼 공통 스타일 */
+#main-nav ul li a,
+#main-nav ul li button {
     color: #EFEFEF;
     text-decoration: none;
     font-size: 16px;
-    transition: color 0.2s ease;
-  }
-  
-  /* 링크에 마우스 올렸을 때 스타일 */
-  #main-nav ul li a:hover {
-    color: #F7C873;
-  }
-  
-  /* 로그아웃 버튼 스타일 */
-  #main-nav ul li button#logoutButton {
+    
+    /* [수정] 내부 아이콘과 텍스트 정렬 */
+    display: flex;
+    align-items: center;
+    
+    padding: 15px 25px; /* 패딩 조정 */
+    width: 100%;
+    box-sizing: border-box;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    
+    /* 버튼 스타일 초기화 (로그아웃 버튼용) */
     background: none;
-    border: 1px solid #EFEFEF;
-    color: #EFEFEF;
-    padding: 5px 10px;
-    font-size: 14px;
-    font-weight: normal;
-    line-height: normal;
-    margin: 0;
+    border: none;
     cursor: pointer;
-    border-radius: 4px;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    vertical-align: middle;
-  }
-  
-  /* 로그아웃 버튼에 마우스 올렸을 때 스타일 */
-  #main-nav ul li button#logoutButton:hover {
-    background-color: #F7C873;
-    color: #1A1A2E;
-    border-color: #F7C873;
-    transform: none;
-  }
-  
-  /* JavaScript에 의해 제어될 항목들의 초기 상태 */
-  #nav-login-item {
-    display: list-item;
-  }
-  #nav-logout-item {
+    font-family: inherit;
+    text-align: left;
+}
+
+.nav-icon {
+    margin-right: 15px; /* 아이콘과 텍스트 사이 간격 */
+    font-size: 1.2em;
+    width: 24px; /* 아이콘 너비 고정 */
+    text-align: center;
+}
+
+/* 링크 및 버튼 호버 효과 */
+#main-nav ul li a:hover,
+#main-nav ul li button:hover {
+    background-color: rgba(247, 200, 115, 0.1); /* 호버 시 배경색 강조 */
+    color: #F7C873;
+}
+
+/* JavaScript 제어 항목 */
+#nav-login-item, #nav-logout-item {
     display: none;
-  }
+}
