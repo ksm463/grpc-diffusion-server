@@ -1,4 +1,4 @@
-# gRPC 디퓨전 서버 (gRPC Diffusion Server)
+# gRPC Diffusion Server
 
 FastAPI 웹 관리 인터페이스와 스테이블 디퓨전(Stable Diffusion) 이미지 생성을 위한 gRPC 기반 AI 추론 서버를 결합한 분산형 AI 이미지 생성 시스템입니다.
 
