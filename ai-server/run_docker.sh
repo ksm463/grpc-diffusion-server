@@ -3,7 +3,7 @@
 port_num="2"
 CONTAINER_NAME="ai-server"
 NETWORK_NAME="diffusion-net"
-IMAGE_NAME="grpc-server-image"
+IMAGE_NAME="diffusion-server-image"
 TAG="0.1"
 
 grpc_ai_path=$(pwd)
