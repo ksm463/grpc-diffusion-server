@@ -1,181 +1,163 @@
-# Docker Compose를 이용한 서버 실행 가이드
+# gRPC 디퓨전 서버 (gRPC Diffusion Server)
 
-이 문서는 `docker-compose.yml` 파일을 사용하여 AI 서버, 웹 관리자 및 모니터링 시스템을 한 번에 실행하는 방법을 안내합니다.
-
-## 1. 시스템 구성 요소
-
-본 Docker Compose 환경은 다음과 같은 서비스(services)로 구성됩니다.
-
-* **애플리케이션(Application)**
-  * `ai-server`: PyTorch 기반의 AI 추론 서버(Inference Server)
-  * `web-manager`: FastAPI 기반의 웹 관리자(Web Manager)
-  * `redis-server`: 데이터 캐싱 및 메시지 큐를 위한 인메모리(in-memory) 데이터 저장소
-
-* **모니터링(Monitoring)**
-  * `prometheus`: 메트릭(metric) 수집 및 시계열 데이터베이스(TSDB)
-  * `grafana`: 메트릭(metric) 시각화를 위한 대시보드(dashboard)
-  * `node-exporter`: 호스트(host)의 CPU, 메모리 등 시스템 자원 메트릭(metric) 수집
-  * `nvidia-dcgm-exporter`: NVIDIA GPU의 상세 메트릭(metric) 수집 (NVIDIA 공식 Exporter)
+FastAPI 웹 관리 인터페이스와 스테이블 디퓨전(Stable Diffusion) 이미지 생성을 위한 gRPC 기반 AI 추론 서버를 결합한 분산형 AI 이미지 생성 시스템입니다.
 
 ---
 
-## 2. 사전 준비 사항
+## 개요 (Overview)
 
-서버를 실행하기 전에 호스트(host) 머신에 다음 소프트웨어들이 설치되어 있어야 합니다.
-
-* [Docker](https://docs.docker.com/engine/install/)
-* [Docker Compose](https://docs.docker.com/compose/install/)
-* [NVIDIA 드라이버](https://www.nvidia.com/Download/index.aspx)
-* [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+이 시스템은 사용자가 웹 인터페이스를 통해 스테이블 디퓨전(Stable Diffusion) 모델을 사용하여 이미지를 생성할 수 있게 하며, 레디스(Redis) 큐를 통한 비동기 처리와 포괄적인 모니터링 기능을 제공합니다. 아키텍처는 AI 처리를 위한 gRPC와 웹 관리를 위한 REST API를 포함하여 잘 정의된 프로토콜을 통해 통신하는 마이크로서비스(microservices)로 구성됩니다.
 
 ---
 
-## 3. 초기 설정
+## 시스템 아키텍처 (System Architecture)
 
-프로젝트 루트(root) 디렉터리에 `docker-compose.yml`과 `prometheus.yml` 외에, 실행 환경을 정의하는 `.env` 파일이 필요합니다.
+이 시스템은 다음과 같은 구성 요소들을 포함하는 마이크로서비스 아키텍처(microservices architecture)로 구조화되어 있습니다.
 
-### `.env` 파일 생성
+### 애플리케이션 서비스 (Application Services)
 
-아래 내용을 복사하여 프로젝트 루트(root)에 `.env` 파일을 생성하세요. **`HOST_IP`를 포함한 호스트 환경 변수는 반드시 자신의 환경에 맞게 수정해야 합니다.**
+- **ai-server**: gRPC에서 실행되는 파이토치(PyTorch) 기반 AI 추론 서버 (`docker-compose.yml:5-11`)
+- **web-manager**: FastAPI 기반 웹 관리 인터페이스 (`docker-compose.yml:44-49`)
+- **redis-server**: 캐싱(caching) 및 메시지 큐잉(message queuing)을 위한 인메모리(in-memory) 데이터 저장소 (`docker-compose.yml:75-77`)
 
-```dotenv
-# .env
+### 모니터링 서비스 (Monitoring Services)
 
-# ==============================
-#      공통 설정 (Common Settings)
-# ==============================
-PORT_NUM=2
-SHARED_SHM_SIZE=20g
+- **prometheus**: 메트릭(metrics) 수집 및 시계열(time-series) 데이터베이스 (`docker-compose.yml:85-87`)
+- **grafana**: 메트릭 시각화 대시보드
+- **node-exporter**: 호스트 시스템 리소스 메트릭 수집
+- **nvidia-dcgm-exporter**: 엔비디아(NVIDIA) GPU 상세 메트릭 수집 (`README.md:18`)
 
-# ==============================
-#   AI 서버 설정 (AI Server Settings)
-# ==============================
-AI_SERVER_IMAGE_NAME=grpc-server-image
-AI_SERVER_IMAGE_TAG=0.1
-AI_SERVER_BUILD_ARG_POINT=1.0
+---
 
-# =================================
-#  웹 관리자 설정 (Web Manager Settings)
-# =================================
-WEB_MANAGER_IMAGE_NAME=web-manager
-WEB_MANAGER_IMAGE_TAG=0.1
+## 주요 기능 (Key Features)
 
-# ==================================
-#  호스트 환경 변수 (Host Environment Variables)
-# ==================================
-# 아래 값들은 터미널 명령어를 통해 확인 후 사용자의 환경에 맞게 수정해주세요.
-HOST_IP=192.168.0.10 # hostname -I | awk '{print $1}'
-HOST_OS_VERSION="Ubuntu 22.04.4 LTS" # cat /etc/os-release | grep PRETTY_NAME | cut -d'=' -f2 | tr -d '"'
-HOST_TIMEZONE=Asia/Seoul # timedatectl status | grep 'Time zone' | awk '{print $3}'
-DISPLAY=:0
+- **비동기 처리 (Asynchronous Processing):** 확장 가능한 이미지 생성을 위한 레디스(Redis) 기반 작업 큐잉 (`diffusion_service.py:51-52`)
+- **gRPC 통신 (gRPC Communication):** 고성능 서비스 간 통신 (`image_requester.py:90-102`)
+- **사용자 인증 (User Authentication):** JWT 토큰을 사용한 Supabase 연동 (`docker-compose.yml:61-63`)
+- **GPU 지원 (GPU Support):** GPU 가속을 위한 엔비디아 컨테이너 툴킷(NVIDIA Container Toolkit) 연동 (`docker-compose.yml:22-23`)
+- **포괄적인 모니터링 (Comprehensive Monitoring):** 그라파나(Grafana) 대시보드를 사용한 프로메테우스(Prometheus) 메트릭
+- **웹 인터페이스 (Web Interface):** 사용자 친화적인 스테이블 디퓨전(Stable Diffusion) 스튜디오 (`studio.html:13`)
 
-# ==================================
-#  데이터베이스 설정 (Database Settings)
-# ==================================
-SUPABASE_KEY="YOUR_SUPABASE_KEY"
-SUPABASE_SERVICE_KEY="YOUR_SUPABASE_SERVICE_KEY"
+---
 
-# ==============================
-#   레디스 설정 (Redis Settings)
-# ==============================
-REDIS_IMAGE_NAME=redis
-REDIS_IMAGE_TAG=6.0.16
-REDIS_PORT=6379
+## 사전 요구사항 (Prerequisites)
 
-# ==================================
-#  모니터링 설정 (Monitoring Settings)
-# ==================================
-# Prometheus
-PROMETHEUS_PORT=29090
-PROMETHEUS_IMAGE_TAG=v3.3.0
+서버를 실행하기 전에 호스트 머신에 다음 소프트웨어가 설치되어 있는지 확인하세요.
 
-# Grafana
-GRAFANA_PORT=23000
-GRAFANA_IMAGE_TAG=11.6.1
+- 도커 (Docker)
+- 도커 컴포즈 (Docker Compose)
+- 엔비디아 드라이버 (NVIDIA Driver)
+- 엔비디아 컨테이너 툴킷 (NVIDIA Container Toolkit) (`README.md:26-29`)
 
-# Node Exporter (CPU, RAM)
-NODE_EXPORTER_PORT=29440
-NODE_EXPORTER_IMAGE_TAG=v1.9.0
+---
 
+## 빠른 시작 (Quick Start)
 
-# DCGM Exporter (GPU) - NVIDIA 공식
-DCGM_EXPORTER_PORT=29400
-DCGM_EXPORTER_IMAGE_TAG=3.3.5-3.1.8-ubuntu22.04
+### 1. 환경 구성 (Environment Configuration)
 
+프로젝트 루트 디렉터리에 `.env` 파일을 생성하고 환경에 맞게 변수를 설정해야 합니다. (`.env.example:1-40`)
+
+먼저, 아래 명령어로 예제 파일을 복사합니다.
+```bash
+cp .env.example .env
 ```
 
-## 4. 주요 명령어
+그 다음, .env 파일을 열어 반드시 다음 변수들을 사용자의 환경에 맞게 수정하세요.
 
-모든 명령어는 `docker-compose.yml` 파일이 있는 프로젝트 루트(root) 디렉터리에서 실행합니다.
+- HOST_IP: 사용자의 서버 IP 주소
+- SUPABASE_KEY 및 SUPABASE_SERVICE_KEY: 사용자의 Supabase 인증 정보 
 
-### 빌드 및 실행
+### 2. 빌드 및 실행 (Build and Run)
 
--   모든 서비스를 **빌드(build)하고 백그라운드에서 실행**합니다.
-    ```bash
-    docker compose up -d --build
-    ```
--   코드 변경 없이 **다시 시작**할 때는 `--build` 옵션을 생략할 수 있습니다.
-    ```bash
-    docker compose up -d
-    ```
+모든 서비스를 백그라운드에서 빌드하고 시작합니다.
 
-### 상태 확인
+```bash
+docker compose up -d --build
+```
 
--   현재 실행 중인 컨테이너(container)들의 상태를 확인합니다.
-    ```bash
-    docker compose ps
-    ```
+이후 코드 변경 없이 실행할 경우:
+```bash
+docker compose up -d
+```
 
-### 로그 확인
 
--   특정 서비스(service)의 실시간 로그(log)를 확인합니다. 디버깅에 유용합니다.
-    ```bash
-    # AI 서버 로그 확인
-    docker compose logs -f ai-server
+### 3. 서비스 접근 (Service Access)
 
-    # 웹 관리자 로그 확인
-    docker compose logs -f web-manager
+실행 후, 다음 URL에서 서비스에 접근할 수 있습니다.
 
-    # GPU Exporter 로그 확인
-    docker compose logs -f nvidia-dcgm-exporter
-    ```
-
-### 종료 및 삭제
-
--   실행 중인 모든 **컨테이너(container)와 네트워크(network)를 중지하고 삭제**합니다.
-    ```bash
-    docker compose down
-    ```
--   컨테이너(container), 네트워크(network)와 함께 직접 **빌드(build)한 이미지(image)까지 삭제**합니다.
-    ```bash
-    docker compose down --rmi local
-    ```
-
----
-
-## 5. 서비스 접속 정보
-
-서비스가 정상적으로 실행되면 아래 주소로 각 UI에 접속할 수 있습니다.
-
-| 서비스 (Service) | 포트 (Port) | 접속 주소 (URL) | 설명 |
+| 서비스 | 포트 | URL | 설명 |
 | :--- | :--- | :--- | :--- |
-| **Web Manager** | 27000, 28000 | `http://<HOST_IP>:27000` | 웹 관리자 UI |
-| **Prometheus** | 29090 | `http://<HOST_IP>:29090` | 메트릭(metric) 쿼리(query) 및 타겟(target) 상태 확인 |
-| **Grafana** | 23000 | `http://<HOST_IP>:23000` | 모니터링 대시보드(dashboard) |
-| **Redis** | 6379 | `redis-cli -h <HOST_IP> -p 6379` | CLI를 통한 접속 |
-| **AI Server** | 20051 등 | - | gRPC 통신 포트 |
+| 웹 관리자 (Web Manager) | 27000, 28000 | `http://<HOST_IP>:27000` | 웹 관리 UI |
+| 프로메테우스 (Prometheus) | 29090 | `http://<HOST_IP>:29090` | 메트릭 쿼리 및 대상 상태 |
+| 그라파나 (Grafana) | 23000 | `http://<HOST_IP>:23000` | 모니터링 대시보드 |
+| 레디스 (Redis) | 6379 | `redis-cli -h <HOST_IP> -p 6379` | CLI 접근 |
+| AI 서버 (AI Server) | 20051 | - | gRPC 통신 포트 |
 
 ---
 
-## 6. 그라파나 대시보드 설정
+## 사용법 (Usage)
 
-GPU 모니터링을 위해 NVIDIA의 공식 DCGM 대시보드(dashboard)를 사용하는 것을 권장합니다.
+### 이미지 생성 (Image Generation)
 
-1.  그라파나(`http://<HOST_IP>:23000`)에 접속합니다.
-2.  왼쪽 메뉴에서 **Dashboards**로 이동합니다.
-3.  오른쪽 상단의 **New** 버튼을 누르고 **Import**를 선택합니다.
-4.  `Import via grafana.com` 입력란에 ID **`12239`** 를 입력하고 **Load** 버튼을 누릅니다.
-5.  다음 화면에서 데이터 소스(data source)를 **Prometheus**로 선택하고 **Import** 버튼을 누르면 설치가 완료됩니다.
+시스템은 다음 흐름을 통해 이미지 생성 요청을 처리합니다.
 
-이제 **NVIDIA DCGM Exporter Dashboard**를 통해 실시간으로 GPU 상태를 모니터링할 수 있습니다.
+1. 사용자가 웹 인터페이스를 통해 요청을 제출합니다. (`studio.html:18-22`)
+2. 웹 관리자가 사용자 인증을 검증하고 gRPC를 통해 AI 서버로 요청을 전달합니다. (`image_requester.py:90-102`)
+3. AI 서버가 레디스(Redis)에 작업을 큐잉하고 스테이블 디퓨전(Stable Diffusion)으로 처리합니다. (`diffusion_service.py:51-55`)
+4. 생성된 이미지는 Supabase에 저장되고 URL이 사용자에게 반환됩니다. (`image_requester.py:124-133`)
 
+### 관리 명령어 (Management Commands)
+
+서비스 상태 확인:
+```bash
+docker compose ps
+```
+
+특정 서비스 로그 보기:
+```bash
+docker compose logs -f ai-server
+docker compose logs -f web-manager
+```
+
+모든 컨테이너 중지 및 제거:
+```bash
+docker compose down
+```
+
+컨테이너 및 로컬에서 빌드된 이미지 제거:
+```bash
+docker compose down --rmi local
+```
+
+---
+
+## 모니터링 설정 (Monitoring Setup)
+
+GPU 모니터링을 위해, 공식 엔비디아(NVIDIA) DCGM 대시보드를 가져오세요.
+
+1. `http://<HOST_IP>:23000` 주소로 그라파나(Grafana)에 접속합니다.
+2. `Dashboards` → `New` → `Import`로 이동합니다.
+3. 대시보드 ID `12239`를 입력하고 데이터 소스로 프로메테우스(Prometheus)를 선택합니다. (`README.md:174-178`)
+
+---
+
+## 기술 스택 (Technology Stack)
+
+- **백엔드 (Backend):** uvicorn 서버를 사용하는 FastAPI
+- **AI 처리 (AI Processing):** 스테이블 디퓨전(Stable Diffusion) 모델을 사용하는 파이토치(PyTorch)
+- **서비스 간 통신 (Inter-Service Communication):** gRPC 프로토콜
+- **메시지 큐 (Message Queue):** 비동기 작업 처리를 위한 레디스(Redis)
+- **인증 및 저장소 (Authentication & Storage):** Supabase 연동
+- **모니터링 (Monitoring):** 프로메테우스(Prometheus) + 그라파나(Grafana)
+- **컨테이너화 (Containerization):** GPU를 지원하는 도커(Docker)
+- **패키지 관리 (Package Management):** 파이썬(Python) 의존성 관리를 위한 UV
+
+---
+
+## 구성 (Configuration)
+
+주요 구성 매개변수는 환경 변수와 도커 컴포즈(Docker Compose) 설정을 통해 관리됩니다. 시스템은 포괄적인 모니터링 기능을 갖춘 개발 및 프로덕션 환경을 모두 지원합니다.
+
+상세한 구성 옵션은 `.env.example` 파일과 `docker-compose.yml` 서비스 정의를 참조하세요. (`.env.example:3-40`)
+
+---
