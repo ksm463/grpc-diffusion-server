@@ -33,8 +33,8 @@ docker run \
     -e HOST_OS_VERSION="$HOST_OS_VERSION" \
     -e HOST_TIMEZONE="$HOST_TIMEZONE" \
     -e SUPABASE_URL="http://${HOST_IP}:54321" \
-    -e SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0" \
-    -e SUPABASE_SERVICE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU" \
+    -e SUPABASE_KEY="" \
+    -e SUPABASE_SERVICE_KEY="" \
     --shm-size 20g \
     --restart=always \
     -w /web-manager \

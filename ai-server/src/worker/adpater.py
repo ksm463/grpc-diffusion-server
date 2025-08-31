@@ -311,13 +311,19 @@ class RedisSDAdapter:
                 queue_key=config[worker_section]['QUEUE_KEY']
             )
 
-            redis_connection_params = dict(
-                host=config['REDIS']['HOST'],
-                port=int(config['REDIS']['PORT']),
-                db=int(config['REDIS']['DB']),
-                use_uds=config.getboolean('REDIS', 'USE_UDS'),
-                uds_path=config['REDIS']['UDS_PATH']
-            )
+            use_uds = config.getboolean('REDIS', 'USE_UDS')
+            redis_connection_params = {
+                'db': int(config['REDIS']['DB']),
+                'use_uds': use_uds
+            }
+
+            if use_uds:
+                # UDS를 사용하는 경우
+                redis_connection_params['uds_path'] = config['REDIS']['UDS_PATH']
+            else:
+                # TCP를 사용하는 경우
+                redis_connection_params['host'] = config['REDIS']['HOST']
+                redis_connection_params['port'] = int(config['REDIS']['PORT'])
             
             adapter_instance = cls(
                 sd_worker_params=sd_worker_params,

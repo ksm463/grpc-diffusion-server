@@ -2,22 +2,20 @@ import configparser
 import os
 from supabase import create_client, Client
 
-# --- 설정 ---
-# 관리자 권한을 부여할 사용자의 이메일 주소를 아래에 입력하세요.
+# 관리자 권한을 부여할 사용자의 이메일 주소를 아래에 입력
 ADMIN_EMAIL = "ksm46351@gmail.com" 
-# --- 설정 ---
 
 def set_admin_by_email():
     """
     manager_config.ini 파일에서 설정을 읽고,
-    지정된 이메일 주소를 가진 사용자에게 관리자 권한을 부여합니다.
+    지정된 이메일 주소를 가진 사용자에게 관리자 권한을 부여
     """
     if not ADMIN_EMAIL or ADMIN_EMAIL == "admin@example.com":
         print("오류: 스크립트 상단의 ADMIN_EMAIL 변수를 실제 관리자 이메일 주소로 변경해주세요.")
         return
 
     try:
-        # 스크립트 파일의 절대 경로를 기준으로 설정 파일의 경로를 계산합니다.
+        # 스크립트 파일의 절대 경로를 기준으로 설정 파일의 경로를 계산
         script_dir = os.path.dirname(os.path.abspath(__file__))
         config_path = os.path.join(script_dir, '..', 'core', 'manager_config.ini')
         config_path = os.path.normpath(config_path)
@@ -42,7 +40,7 @@ def set_admin_by_email():
 
         # 사용자 목록 가져오기
         print("모든 사용자 목록을 조회합니다...")
-        # supabase-py v2부터 list_users()는 사용자 리스트를 직접 반환합니다.
+        # supabase-py v2부터 list_users()는 사용자 리스트를 직접 반환
         users_list = supabase.auth.admin.list_users()
 
         if not users_list:
@@ -50,7 +48,7 @@ def set_admin_by_email():
             return
 
         # 이메일 주소로 대상 사용자 찾기
-        # .users 속성 없이 리스트에서 직접 검색합니다.
+        # .users 속성 없이 리스트에서 직접 검색
         target_user = next((user for user in users_list if user.email == ADMIN_EMAIL), None)
         
         if not target_user:

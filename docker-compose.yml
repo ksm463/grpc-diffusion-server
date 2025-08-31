@@ -1,0 +1,172 @@
+version: '3.8'
+
+services:
+  # AI 서버 서비스
+  ai-server:
+    build:
+      context: ./ai-server
+      dockerfile: Dockerfile
+      args:
+        - POINT=${AI_SERVER_BUILD_ARG_POINT}
+    image: ${AI_SERVER_IMAGE_NAME}:${AI_SERVER_IMAGE_TAG}
+    container_name: ai-server
+    restart: always
+    privileged: true
+    working_dir: /ai-server
+    shm_size: ${SHARED_SHM_SIZE}
+    environment:
+      - DISPLAY=${DISPLAY}
+      - HOST_IP=${HOST_IP}
+      - HOST_OS_VERSION=${HOST_OS_VERSION}
+      - HOST_TIMEZONE=${HOST_TIMEZONE}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    ports:
+      - "20051:20051"
+      - "${PORT_NUM}5000:5000"
+      - "${PORT_NUM}8888:8888"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./ai-server:/ai-server
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - diffusion-net
+    command: /bin/bash -c "cd src && uv run main.py"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # 웹 관리자 서비스
+  web-manager:
+    build:
+      context: ./web-manager
+      dockerfile: Dockerfile
+    image: ${WEB_MANAGER_IMAGE_NAME}:${WEB_MANAGER_IMAGE_TAG}
+    container_name: web-manager
+    restart: always
+    privileged: true
+    working_dir: /web-manager
+    shm_size: ${SHARED_SHM_SIZE}
+    depends_on:
+      - ai-server
+    environment:
+      - DISPLAY=${DISPLAY}
+      - HOST_IP=${HOST_IP}
+      - HOST_OS_VERSION=${HOST_OS_VERSION}
+      - HOST_TIMEZONE=${HOST_TIMEZONE}
+      - SUPABASE_URL=http://${HOST_IP}:54321
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+    ports:
+      - "${PORT_NUM}7000:7000"
+      - "${PORT_NUM}8000:8000"
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./web-manager:/web-manager
+    networks:
+      - diffusion-net
+    command: /bin/bash -c "cd app && uv run main.py"
+
+  # 레디스 서비스
+  redis-server:
+    image: ${REDIS_IMAGE_NAME}:${REDIS_IMAGE_TAG}
+    container_name: redis-server
+    restart: always
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    networks:
+      - diffusion-net
+
+  # 프로메테우스
+  prometheus:
+    image: prom/prometheus:${PROMETHEUS_IMAGE_TAG}
+    container_name: prometheus
+    restart: always
+    depends_on:
+      - node-exporter
+      - nvidia-smi-exporter
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=${HOST_TIMEZONE}
+    networks:
+      - diffusion-net
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+  # 그라파나
+  grafana:
+    image: grafana/grafana:${GRAFANA_IMAGE_TAG}
+    container_name: grafana
+    restart: always
+    depends_on:
+      - prometheus
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - TZ=${HOST_TIMEZONE}
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    networks:
+      - diffusion-net
+
+  # CPU
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:${NODE_EXPORTER_IMAGE_TAG}
+    container_name: node-exporter
+    restart: unless-stopped
+    ports:
+      - "${NODE_EXPORTER_PORT}:9440"
+    volumes:
+      - "/:/host:ro,rslave"
+    pid: "host"
+    networks:
+      - diffusion-net
+    command:
+      - '--path.rootfs=/host'
+      - '--web.listen-address=:9440'
+
+  # GPU
+  nvidia-smi-exporter:
+    image: utkuozdemir/nvidia_gpu_exporter:${NVIDIA_EXPORTER_IMAGE_TAG}
+    container_name: nvidia-smi-exporter
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "${NVIDIA_EXPORTER_PORT}:9835"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - diffusion-net
+
+# 네트워크
+networks:
+  diffusion-net:
+    driver: bridge
+
+# 데이터 저장 볼륨
+volumes:
+  prometheus-data:
+  grafana-storage:
