@@ -15,13 +15,12 @@ def setup_logger(config_path: str):
     config = configparser.ConfigParser()
     config.read(config_path)
 
-    log_dir = config['GLOBAL']['LOG_FILE_PATH']
-    log_name = config['GLOBAL']['LOG_FILE_NAME']
-    log_level = config['GLOBAL']['LOG_LEVEL']
-    log_rotation = config['GLOBAL']['LOG_ROTATION']
-    log_retention = int(config['GLOBAL']['LOG_RETENTION'])
-    log_encoding = config['GLOBAL']['LOG_ENCODING']
-    # log_file_path = str(Path(log_dir) / f"{log_name}.log")
+    log_dir = config['LOG']['LOG_FILE_PATH']
+    log_name = config['LOG']['LOG_FILE_NAME']
+    log_level = config['LOG']['LOG_LEVEL']
+    log_rotation = config['LOG']['LOG_ROTATION']
+    log_retention = int(config['LOG']['LOG_RETENTION'])
+    log_encoding = config['LOG']['LOG_ENCODING']
     
     # 파일 경로 생성
     debug_log_path = str(Path(log_dir) / f"{log_name}_debug.log")
@@ -33,7 +32,7 @@ def setup_logger(config_path: str):
     # 파일 로깅 설정
     logger.add(
         debug_log_path,
-        level=log_level.upper(), # 설정 파일의 레벨을 따름 (e.g., "DEBUG")
+        level=log_level.upper(),
         rotation=log_rotation,
         retention=log_retention,
         enqueue=True,
@@ -46,7 +45,7 @@ def setup_logger(config_path: str):
     # 2. INFO 레벨 이상을 기록하는 파일 로거
     logger.add(
         info_log_path,
-        level="INFO", # INFO 레벨 이상만 기록
+        level="INFO",
         rotation=log_rotation,
         retention=log_retention,
         enqueue=True,
@@ -58,7 +57,7 @@ def setup_logger(config_path: str):
 
     # 콘솔 로깅 설정 (INFO 레벨 이상)
     logger.add(
-        sys.stdout, # print 대신 sys.stdout을 사용함
+        sys.stdout,
         level="INFO",
         format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | <level>{level: <8}</level> | <cyan>{process.name}:{process.id}</cyan> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"
     )

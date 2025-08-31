@@ -4,12 +4,12 @@ port_num="2"
 CONTAINER_NAME="ai-server"
 NETWORK_NAME="diffusion-net"
 IMAGE_NAME="grpc-server-image"
-TAG="pytorch2405"
+TAG="0.1"
 
 grpc_ai_path=$(pwd)
 
 docker run \
-    -it \
+    -d \
     --gpus all \
     -p 20051:20051 \
     -p ${port_num}5000:5000 \
