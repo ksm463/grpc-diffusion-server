@@ -1,7 +1,6 @@
 .vscode/
 .venv/
 log/
-preview/
 result/
 __pycache__/
 *.pyc

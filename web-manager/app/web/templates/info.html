@@ -1,38 +1,41 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>gRPC 정보 페이지</title>
-  <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
-  <link rel="stylesheet" href="/web/static/css/_navbar.css">
-  <link rel="stylesheet" href="/web/static/css/info.css">
+    <meta charset="UTF-8">
+    <title>gRPC 정보 페이지</title>
+    <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
+    <link rel="stylesheet" href="/web/static/css/_navbar.css">
+    <link rel="stylesheet" href="/web/static/css/info.css">
 </head>
 <body>
-  {% include 'partials/_navbar.html' %}
-  <div id="container">
-    <div class="container-header">gRPC 정보 페이지</div>
+    {% include 'partials/_navbar.html' %}
+    <div id="container">
+        <div class="container-header">gRPC 정보 페이지</div>
 
-    <main id="app">
-      <div id="main-page-content" class="page-content active">
-        <section id="grpc-info-section">
-          <h2>gRPC Port Information</h2>
-          <div id="grpcPortInfo">Loading... <span class="loader"></span></div>
-          </section>
+        <main id="app">
+            <div id="main-page-content" class="page-content active">
+                <section id="grpc-info-section">
+                    <h2>gRPC Port Information</h2>
+                    <div id="grpcPortInfo">Loading... <span class="loader"></span></div>
+                </section>
 
-        <section id="proto-section">
-          <h2>PROTO BUFFERS File Management</h2>
-          <h3>Stored PROTO File Content:</h3>
-          <pre id="protoFileContent">조회 버튼을 눌러 PROTO 파일 내용을 불러오세요.</pre>
-          <button id="copyProtoButton" class="copy-button" style="display: none;" title="내용 복사">
-            📋 </button>
-          <button id="viewProtoButton">조회</button>
-          <button id="downloadProtoButton" disabled>다운로드</button>
-        </section>
-      </div>
-    </main>
-  </div>
+                <section id="proto-section">
+                    <h2>PROTO BUFFERS File Management</h2>
+                    <h3>Stored PROTO File Content:</h3>
+                    <pre id="protoFileContent">조회 버튼을 눌러 PROTO 파일 내용을 불러오세요.</pre>
+                    <button id="copyProtoButton" class="copy-button" style="display: none;" title="내용 복사">
+                        📋 </button>
+                    
+                    <div class="button-group">
+                        <button id="viewProtoButton">조회</button>
+                        <button id="downloadProtoButton" disabled>다운로드</button>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
 
-  <script src="/web/static/js/auth.js"></script>
-  <script src="/web/static/js/info.js"></script>
+    <script src="/web/static/js/auth.js"></script>
+    <script src="/web/static/js/info.js"></script>
 </body>
 </html>
