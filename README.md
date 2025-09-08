@@ -6,57 +6,59 @@ FastAPI 웹 관리 인터페이스와 스테이블 디퓨전(Stable Diffusion) �
 
 ## 개요 (Overview)
 
-이 시스템은 사용자가 웹 인터페이스를 통해 스테이블 디퓨전(Stable Diffusion) 모델을 사용하여 이미지를 생성할 수 있게 하며, 레디스(Redis) 큐를 통한 비동기 처리와 포괄적인 모니터링 기능을 제공합니다. 아키텍처는 AI 처리를 위한 gRPC와 웹 관리를 위한 REST API를 포함하여 잘 정의된 프로토콜을 통해 통신하는 마이크로서비스(microservices)로 구성됩니다.
+이 시스템은 사용자가 웹 인터페이스를 통해 스테이블 디퓨전(Stable Diffusion) 모델을 사용하여 이미지를 생성할 수 있게 하며, 레디스(Redis) 큐를 통한 비동기 처리와 온프레미스(On-premis) 하드웨어 모니터링 기능을 제공합니다. 아키텍처는 AI 처리를 위한 gRPC와 웹 관리를 위한 REST API를 포함하여 잘 정의된 프로토콜을 통해 통신하는 마이크로서비스(microservices)로 구성됩니다.
+<div align="center">
+
+![Image](https://github.com/user-attachments/assets/c7642e44-0d32-464a-a595-6929c16eb628)
+</div>
 
 ---
 
 ## 시스템 아키텍처 (System Architecture)
 
-이 시스템은 다음과 같은 구성 요소들을 포함하는 마이크로서비스 아키텍처(microservices architecture)로 구조화되어 있습니다.
+이 시스템은 다음과 같은 구성 요소들을 포함하는 마이크로서비스 아키텍처(microservices architecture)로 구성되어 있습니다.
 
 ### 애플리케이션 서비스 (Application Services)
 
-- **ai-server**: gRPC에서 실행되는 파이토치(PyTorch) 기반 AI 추론 서버 (`docker-compose.yml:5-11`)
-- **web-manager**: FastAPI 기반 웹 관리 인터페이스 (`docker-compose.yml:44-49`)
-- **redis-server**: 캐싱(caching) 및 메시지 큐잉(message queuing)을 위한 인메모리(in-memory) 데이터 저장소 (`docker-compose.yml:75-77`)
+- **ai-server**: gRPC에서 실행되는 파이토치(PyTorch) 기반 AI 추론 서버 
+- **web-manager**: FastAPI 기반 웹 관리 인터페이스
+- **redis-server**: 캐싱(caching) 및 메시지 큐잉(message queuing)을 위한 인메모리(in-memory) 데이터 저장소
 
 ### 모니터링 서비스 (Monitoring Services)
 
-- **prometheus**: 메트릭(metrics) 수집 및 시계열(time-series) 데이터베이스 (`docker-compose.yml:85-87`)
+- **prometheus**: 메트릭(metrics) 수집 및 시계열(time-series) 데이터베이스 
 - **grafana**: 메트릭 시각화 대시보드
-- **node-exporter**: 호스트 시스템 리소스 메트릭 수집
-- **nvidia-dcgm-exporter**: 엔비디아(NVIDIA) GPU 상세 메트릭 수집 (`README.md:18`)
+- **node-exporter**: 호스트 시스템 리소스(CPU, MEM 등) 메트릭 수집
+- **nvidia-dcgm-exporter**: 엔비디아(NVIDIA) GPU 상세 메트릭 수집
 
 ---
 
 ## 주요 기능 (Key Features)
 
-- **비동기 처리 (Asynchronous Processing):** 확장 가능한 이미지 생성을 위한 레디스(Redis) 기반 작업 큐잉 (`diffusion_service.py:51-52`)
-- **gRPC 통신 (gRPC Communication):** 고성능 서비스 간 통신 (`image_requester.py:90-102`)
-- **사용자 인증 (User Authentication):** JWT 토큰을 사용한 Supabase 연동 (`docker-compose.yml:61-63`)
-- **GPU 지원 (GPU Support):** GPU 가속을 위한 엔비디아 컨테이너 툴킷(NVIDIA Container Toolkit) 연동 (`docker-compose.yml:22-23`)
+- **비동기 처리 (Asynchronous Processing):** 확장 가능한 이미지 생성을 위한 레디스(Redis) 기반 작업 큐잉
+- **gRPC 통신 (gRPC Communication):** 고성능 서비스 간 통신 
+- **사용자 인증 (User Authentication):** JWT 토큰을 사용한 Supabase 연동 
+- **GPU 지원 (GPU Support):** GPU 가속을 위한 엔비디아 컨테이너 툴킷(NVIDIA Container Toolkit) 연동 
 - **포괄적인 모니터링 (Comprehensive Monitoring):** 그라파나(Grafana) 대시보드를 사용한 프로메테우스(Prometheus) 메트릭
-- **웹 인터페이스 (Web Interface):** 사용자 친화적인 스테이블 디퓨전(Stable Diffusion) 스튜디오 (`studio.html:13`)
+- **웹 인터페이스 (Web Interface):** 사용자 친화적인 스테이블 디퓨전(Stable Diffusion) 스튜디오
 
 ---
 
 ## 사전 요구사항 (Prerequisites)
 
-서버를 실행하기 전에 호스트 머신에 다음 소프트웨어가 설치되어 있는지 확인하세요.
+서버를 실행하기 전에 호스트 머신에 다음 소프트웨어가 설치되어 있어야 합니다.
 
 - 도커 (Docker)
 - 도커 컴포즈 (Docker Compose)
 - 엔비디아 드라이버 (NVIDIA Driver)
-- 엔비디아 컨테이너 툴킷 (NVIDIA Container Toolkit) (`README.md:26-29`)
-
+- 엔비디아 컨테이너 툴킷 (NVIDIA Container Toolkit)
 ---
 
 ## 빠른 시작 (Quick Start)
 
 ### 1. 환경 구성 (Environment Configuration)
 
-프로젝트 루트 디렉터리에 `.env` 파일을 생성하고 환경에 맞게 변수를 설정해야 합니다. (`.env.example:1-40`)
-
+프로젝트 루트 디렉터리에 `.env` 파일을 생성하고 환경에 맞게 변수를 설정해야 합니다.
 먼저, 아래 명령어로 예제 파일을 복사합니다.
 ```bash
 cp .env.example .env
@@ -101,33 +103,19 @@ docker compose up -d
 
 시스템은 다음 흐름을 통해 이미지 생성 요청을 처리합니다.
 
-1. 사용자가 웹 인터페이스를 통해 요청을 제출합니다. (`studio.html:18-22`)
-2. 웹 관리자가 사용자 인증을 검증하고 gRPC를 통해 AI 서버로 요청을 전달합니다. (`image_requester.py:90-102`)
-3. AI 서버가 레디스(Redis)에 작업을 큐잉하고 스테이블 디퓨전(Stable Diffusion)으로 처리합니다. (`diffusion_service.py:51-55`)
-4. 생성된 이미지는 Supabase에 저장되고 URL이 사용자에게 반환됩니다. (`image_requester.py:124-133`)
+1. 사용자가 웹 인터페이스를 통해 요청을 제출합니다.
 
-### 관리 명령어 (Management Commands)
+2. 웹 관리자가 사용자 인증을 검증하고 gRPC를 통해 AI 서버로 요청을 전달합니다.
 
-서비스 상태 확인:
-```bash
-docker compose ps
-```
+3. AI 서버가 레디스(Redis)에 작업을 큐잉하고 스테이블 디퓨전(Stable Diffusion)으로 처리합니다.
 
-특정 서비스 로그 보기:
-```bash
-docker compose logs -f ai-server
-docker compose logs -f web-manager
-```
+4. 생성된 이미지는 Supabase에 저장되고 URL이 페이지에 반환됩니다. 
 
-모든 컨테이너 중지 및 제거:
-```bash
-docker compose down
-```
+<div align="center">
 
-컨테이너 및 로컬에서 빌드된 이미지 제거:
-```bash
-docker compose down --rmi local
-```
+<img width="1072" height="1077" alt="Image" src="https://github.com/user-attachments/assets/d0d83a48-a381-4841-bb70-6877b93cd49a" />
+<img width="1681" height="1072" alt="Image" src="https://github.com/user-attachments/assets/0916a961-9ac3-45d1-8a61-6153cd0a7aca" />
+</div>
 
 ---
 
@@ -137,7 +125,7 @@ GPU 모니터링을 위해, 공식 엔비디아(NVIDIA) DCGM 대시보드를 가
 
 1. `http://<HOST_IP>:23000` 주소로 그라파나(Grafana)에 접속합니다.
 2. `Dashboards` → `New` → `Import`로 이동합니다.
-3. 대시보드 ID `12239`를 입력하고 데이터 소스로 프로메테우스(Prometheus)를 선택합니다. (`README.md:174-178`)
+3. 대시보드 ID `12239`를 입력하고 데이터 소스로 프로메테우스(Prometheus)를 선택합니다. 
 
 ---
 
