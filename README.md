@@ -115,6 +115,7 @@ docker compose up -d
 
 <img width="1072" height="1077" alt="Image" src="https://github.com/user-attachments/assets/d0d83a48-a381-4841-bb70-6877b93cd49a" />
 <img width="1681" height="1072" alt="Image" src="https://github.com/user-attachments/assets/0916a961-9ac3-45d1-8a61-6153cd0a7aca" />
+<img width="1359" height="1076" alt="Image" src="https://github.com/user-attachments/assets/cff72e2b-e937-4ba9-99bf-df1e029ed776" />
 </div>
 
 ---
