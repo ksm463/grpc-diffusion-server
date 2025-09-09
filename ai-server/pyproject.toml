@@ -1,0 +1,35 @@
+[project]
+name = "grpc-ai-server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "cucim-cu12>=25.4.0",
+    "grpcio==1.71.0",
+    "grpcio-tools==1.71.0",
+    "icecream>=2.1.4",
+    "msgpack>=1.1.0",
+    "pillow-heif>=0.22.0",
+    "redis>=5.2.1",
+    "numpy<2.0",
+    "loguru>=0.7.3",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
+    "torchvision>=0.23.0",
+    "diffusers>=0.35.1",
+    "transformers>=4.55.4",
+    "accelerate>=1.10.0",
+    "safetensors>=0.6.2",
+    "sentencepiece>=0.2.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow to run",
+]

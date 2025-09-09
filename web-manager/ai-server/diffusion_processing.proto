@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+// 이미지 생성 서비스
+service ImageGenerator {
+  // 이미지 생성 요청
+  rpc GenerateImage (GenerationRequest) returns (GenerationResponse);
+}
+
+// 이미지 생성 요청 데이터
+message GenerationRequest {
+  string request_id = 1;          // 요청 식별용 ID (UUID)
+  string prompt = 2;              // 생성 프롬프트
+  float guidance_scale = 3;       // 가이던스 스케일
+  int32 num_inference_steps = 4;  // 추론 단계 수
+  int32 width = 5;                // 이미지 너비
+  int32 height = 6;               // 이미지 높이
+  int64 seed = 7;                 // 시드값 (-1일 경우 랜덤)
+}
+
+// 이미지 생성 응답 데이터
+message GenerationResponse {
+  // 작업 결과 상태
+  enum Status {
+    SUCCESS = 0; // 성공
+    FAILURE = 1; // 실패
+  }
+  string request_id = 1;      // 원본 요청 식별용 ID
+  Status status = 2;          // 생성 결과 상태
+  string error_message = 3;   // 에러 발생 시 메시지
+  bytes image_data = 4;       // 생성된 이미지 바이너리 (bytes)
+  int64 used_seed = 5;        // 실제 생성에 사용된 시드값
+}
