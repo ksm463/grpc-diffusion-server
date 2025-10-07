@@ -73,6 +73,7 @@ class RedisSDAdapter:
                     unix_socket_path=params['uds_path'],
                     db=params['db'],
                     decode_responses=False,
+                    socket_connect_timeout=params.get('timeout', 5)
                 )
                 connection_info = f"UDS at {params['uds_path']}"
             else:
@@ -315,7 +316,8 @@ class RedisSDAdapter:
             use_uds = config.getboolean('REDIS', 'USE_UDS')
             redis_connection_params = {
                 'db': int(config['REDIS']['DB']),
-                'use_uds': use_uds
+                'use_uds': use_uds,
+                'timeout': int(config.get('REDIS', 'REDIS_TIMEOUT', fallback=5)) # <-- 공통으로 설정
             }
 
             if use_uds:
@@ -325,7 +327,6 @@ class RedisSDAdapter:
                 # TCP를 사용하는 경우
                 redis_connection_params['host'] = config['REDIS']['HOST']
                 redis_connection_params['port'] = int(config['REDIS']['PORT'])
-                redis_connection_params['timeout'] = int(config.get('REDIS', 'REDIS_TIMEOUT', fallback=5))
             
             adapter_instance = cls(
                 sd_worker_params=sd_worker_params,

@@ -66,18 +66,18 @@ async def run_server(config_path: str):
         
         # Redis 연결
         redis_use_uds = config.getboolean('REDIS', 'USE_UDS')
+        redis_timeout = int(config.get('REDIS', 'REDIS_TIMEOUT', fallback=5))
         redis_db = int(config['REDIS']['DB'])
 
         if redis_use_uds:
             # UDS를 사용할 때
             redis_uds_path = config.get('REDIS', 'UDS_PATH')
             logger.info(f"Connecting to Redis UDS at {redis_uds_path}")
-            redis_client = redis.Redis(unix_socket_path=redis_uds_path, db=redis_db)
+            redis_client = redis.Redis(unix_socket_path=redis_uds_path, db=redis_db, socket_timeout=redis_timeout)
         else:
             # TCP를 사용할 때
             redis_host = config.get('REDIS', 'HOST')
             redis_port = int(config.get('REDIS', 'PORT'))
-            redis_timeout = int(config.get('REDIS', 'REDIS_TIMEOUT'))
             logger.info(f"Connecting to Redis at {redis_host}:{redis_port}")
             redis_client = redis.Redis(
                 host=redis_host, 
