@@ -77,8 +77,15 @@ async def run_server(config_path: str):
             # TCP를 사용할 때
             redis_host = config.get('REDIS', 'HOST')
             redis_port = int(config.get('REDIS', 'PORT'))
+            redis_timeout = int(config.get('REDIS', 'REDIS_TIMEOUT'))
             logger.info(f"Connecting to Redis at {redis_host}:{redis_port}")
-            redis_client = redis.Redis(host=redis_host, port=redis_port, db=redis_db, decode_responses=False)
+            redis_client = redis.Redis(
+                host=redis_host, 
+                port=redis_port, 
+                db=redis_db, 
+                decode_responses=False,
+                socket_connect_timeout=redis_timeout,
+            )
         
         await redis_client.ping()
         logger.success("Successfully connected to Redis.")
