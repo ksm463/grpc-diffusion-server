@@ -66,7 +66,7 @@ class RedisSDAdapter:
         self.loop: Optional[asyncio.AbstractEventLoop] = None
         
     def _initialize_redis_client(self, params: Dict[str, Any]) -> redis.Redis:
-        """Redis 클라이언트를 생성하고 연결을 확인"""
+        """Redis 클라이언트를 생성하고 연결 확인"""
         try:
             if params['use_uds']:
                 client = redis.Redis(
@@ -93,6 +93,33 @@ class RedisSDAdapter:
         except Exception as e:
             self.logger.error(f"An unexpected error occurred during Redis client initialization: {e}\n{traceback.format_exc()}")
             raise
+
+    async def _wait_for_worker_ready(self, max_retries=10, initial_delay=0.1, max_delay=2.0):
+        """
+        SD Worker가 준비될 때까지 exponential backoff로 대기
+        """
+        delay = initial_delay
+        
+        for attempt in range(max_retries):
+            if self.sd_worker.asyncio_event.is_set():
+                self.logger.success(f"SD worker ready after {attempt + 1} attempts.")
+                return True
+            
+            if attempt < max_retries - 1:
+                self.logger.debug(
+                    f"Attempt {attempt + 1}/{max_retries}: SD worker not ready yet. "
+                    f"Retrying in {delay:.2f} seconds..."
+                )
+                await asyncio.sleep(delay)
+                
+                # Exponential backoff with cap
+                delay = min(delay * 2, max_delay)
+            else:
+                self.logger.error(
+                    f"SD worker failed to become ready after {max_retries} attempts."
+                )
+        
+        return False
 
     async def _fetch_jobs_from_redis(self):
         """Redis 큐에서 작업을 가져와 워커의 입력 큐로 전달"""
@@ -228,9 +255,26 @@ class RedisSDAdapter:
         worker_main_task = self.loop.create_task(self.sd_worker.start(), name="SDWorkerInternal")
         self._tasks.append(worker_main_task)
         
-        await asyncio.sleep(0.5) 
-        if not self.sd_worker.asyncio_event.is_set():
-             self.logger.warning("SD worker asyncio_event not set after start. Check SD worker logs.")
+        # SD Worker가 준비될 때까지 exponential backoff로 대기
+        worker_ready = await self._wait_for_worker_ready(
+            max_retries=10,
+            initial_delay=0.1,
+            max_delay=2.0
+        )
+        
+        if not worker_ready:
+            self.logger.error("SD worker failed to start properly. Shutting down adapter.")
+            self._is_running = False
+            
+            # 시작된 태스크 정리
+            if worker_main_task and not worker_main_task.done():
+                worker_main_task.cancel()
+                try:
+                    await worker_main_task
+                except asyncio.CancelledError:
+                    pass
+            
+            raise RuntimeError("SD worker failed to initialize properly")
 
         redis_to_input_task = self.loop.create_task(self._fetch_jobs_from_redis(), name="RedisToInput")
         output_to_redis_task = self.loop.create_task(self._publish_results_to_redis(), name="OutputToRedis")
@@ -246,17 +290,33 @@ class RedisSDAdapter:
         self.logger.info("Stopping RedisSDAdapter...")
         self._is_running = False 
 
+        # SD worker에 종료 신호를 먼저 보냄
         if self.sd_worker and self.sd_worker.asyncio_event.is_set():
             self.logger.info("Requesting SD worker shutdown...")
             self.sd_worker.asyncio_event.clear()
+            # Worker가 종료 신호를 처리할 시간을 줌
+            await asyncio.sleep(0.1)
 
+        # 각 태스크를 안전하게 취소
+        tasks_to_wait = []
         for task in self._tasks:
             if not task.done():
+                self.logger.debug(f"Cancelling task: {task.get_name()}")
                 task.cancel()
+                tasks_to_wait.append(task)
         
-        if self._tasks:
-            await asyncio.gather(*self._tasks, return_exceptions=True)
-            self.logger.info("All adapter tasks finished gathering.")
+        # 모든 태스크가 완료되거나 취소될 때까지 대기 (타임아웃 설정)
+        if tasks_to_wait:
+            try:
+                await asyncio.wait_for(
+                    asyncio.gather(*tasks_to_wait, return_exceptions=True),
+                    timeout=5.0
+                )
+                self.logger.info("All adapter tasks finished gathering.")
+            except asyncio.TimeoutError:
+                self.logger.warning("Some tasks did not finish within timeout during shutdown.")
+            except Exception as e:
+                self.logger.error(f"Error during task cleanup: {e}")
         
         self._tasks = []
         self.logger.info("RedisSDAdapter stopped.")
@@ -269,11 +329,16 @@ class RedisSDAdapter:
                 await asyncio.gather(*operational_tasks, return_exceptions=True)
         except KeyboardInterrupt:
             self.logger.info("KeyboardInterrupt received. Stopping adapter...")
+        except asyncio.CancelledError:
+            self.logger.info("Adapter tasks cancelled.")
         except Exception as e:
             self.logger.error(f"Unhandled exception in run_forever: {e}\n{traceback.format_exc()}")
         finally:
             if self._is_running or any(not t.done() for t in self._tasks):
-                   await self.stop()
+                try:
+                    await self.stop()
+                except Exception as e:
+                    self.logger.error(f"Error during stop in run_forever: {e}")
     
     @classmethod
     def run_adapter_in_subprocess(
@@ -288,17 +353,28 @@ class RedisSDAdapter:
         logger.info(f"Adapter subprocess target function started (PID: {os.getpid()}).")
 
         adapter_instance = None
-        loop = asyncio.get_event_loop()
-
-        def _signal_handler():
-            logger.warning("Shutdown signal received. Initiating graceful shutdown...")
-            if adapter_instance:
-                asyncio.ensure_future(adapter_instance.stop(), loop=loop)
-
-        for sig in (signal.SIGINT, signal.SIGTERM):
-            loop.add_signal_handler(sig, _signal_handler)
+        loop = None
         
         try:
+            # 새로운 이벤트 루프 생성
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            shutdown_event = asyncio.Event()
+
+            async def shutdown_handler():
+                logger.warning("Shutdown signal received. Initiating graceful shutdown...")
+                shutdown_event.set()
+                if adapter_instance:
+                    await adapter_instance.stop()
+
+            # 시그널 핸들러 설정
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                loop.add_signal_handler(
+                    sig,
+                    lambda: asyncio.create_task(shutdown_handler())
+                )
+            
             config = configparser.ConfigParser()
             config.read(config_path)
             
@@ -333,13 +409,34 @@ class RedisSDAdapter:
                 redis_ttl=int(config['REDIS']['OUTPUT_TTL']),
                 logger_instance=logger
             )
+            
+            # 어댑터 실행
             loop.run_until_complete(adapter_instance.run_forever())
 
         except Exception as e:
             logger.error(f"Error in adapter subprocess execution: {e}\n{traceback.format_exc()}")
         finally:
-            if not loop.is_closed():
-                loop.close()
+            # 이벤트 루프가 여전히 실행 중이면 정리
+            if loop and not loop.is_closed():
+                try:
+                    # 남은 태스크들 정리
+                    pending = asyncio.all_tasks(loop)
+                    for task in pending:
+                        task.cancel()
+                    
+                    # 모든 태스크가 완료될 때까지 대기 (짧은 타임아웃)
+                    if pending:
+                        loop.run_until_complete(
+                            asyncio.wait_for(
+                                asyncio.gather(*pending, return_exceptions=True),
+                                timeout=2.0
+                            )
+                        )
+                except Exception as e:
+                    logger.debug(f"Error during final cleanup: {e}")
+                finally:
+                    loop.close()
+            
             logger.info(f"Adapter subprocess target function finished (PID: {os.getpid()}).")
 
 
