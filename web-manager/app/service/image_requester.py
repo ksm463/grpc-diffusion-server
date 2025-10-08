@@ -3,8 +3,17 @@ import grpc
 from typing import List
 from fastapi import HTTPException
 
-from service import diffusion_processing_pb2
-from service import diffusion_processing_pb2_grpc
+import sys
+import os
+
+# stub파일을 가져오기 위해 경로를 /web-manager/app로 설정
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+protos_path = os.path.join(parent_dir, 'protos')
+sys.path.append(protos_path)
+
+import diffusion_processing_pb2
+import diffusion_processing_pb2_grpc
 
 from supabase import Client
 from gotrue.types import User as SupabaseUser

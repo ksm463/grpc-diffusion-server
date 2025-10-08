@@ -1,145 +1,145 @@
-import grpc.aio as grpc
+import grpc
 import asyncio
 import redis.asyncio as redis
 import configparser
-import time
-import os
 import signal
 import argparse
+import multiprocessing
 from loguru import logger
 
-from interface import diffusion_processing_pb2_grpc
-from interface.diffusion_service import DiffusionProcessingServicer, create_worker_subprocess
+from interface.diffusion_service import create_worker_subprocess
 from utility.logger import setup_logger
+from process import ProcessLifecycleManager, create_watchdog_subprocess
+from process.server_setup import (
+    connect_to_redis,
+    setup_grpc_server,
+    wait_for_shutdown,
+    cleanup_redis,
+    cleanup_partial,
+    cleanup_all
+)
 
 
 async def run_server(config_path: str):
-    """서버 설정 및 실행 (loguru 실행)"""
+    """서버 설정 및 실행"""
+    # Config 읽기 및 로거 설정 (패닉 가능성 낮음)
     config = configparser.ConfigParser()
     config.read(config_path)
-
-    # --- 1. 로거 설정 ---
     setup_logger(config_path)
+    logger.info("="*10 + " gRPC Server Starting " + "="*10)
 
-    # --- 2. 프로세스 시작 및 gRPC 서버 실행 ---
-    worker_processes = []
+    # 프로세스 생명주기 관리자 초기화
+    lifecycle_config = {
+        'max_retries': int(config.get('PROCESS', 'MAX_STARTUP_RETRIES', fallback=10)),
+        'initial_delay': float(config.get('PROCESS', 'INITIAL_DELAY', fallback=0.1)),
+        'max_delay': float(config.get('PROCESS', 'MAX_DELAY', fallback=5.0)),
+        'shutdown_timeout': float(config.get('PROCESS', 'SHUTDOWN_TIMEOUT', fallback=10.0)),
+        'watchdog_check_interval': float(config.get('WATCHDOG', 'CHECK_INTERVAL', fallback=2.0)),
+        'watchdog_max_restarts': int(config.get('WATCHDOG', 'MAX_RESTART_ATTEMPTS', fallback=3))
+    }
+    
+    lifecycle_manager = ProcessLifecycleManager(lifecycle_config)
+    redis_client = None
     server = None
+    shutdown_event = asyncio.Event()
+    
+    # SIGTERM 핸들러 설정
+    def handle_sigterm(signum, frame):
+        logger.warning(f"Received signal {signum}. Setting shutdown event.")
+        shutdown_event.set()
+    
+    signal.signal(signal.SIGTERM, handle_sigterm)
+    
+    # 1. Redis 연결
     try:
-        logger.info("="*10 + " gRPC Server Starting " + "="*10)
-        
-        # Redis 연결
-        redis_use_uds = config.getboolean('REDIS', 'USE_UDS')
-        redis_db = int(config['REDIS']['DB'])
-
-        if redis_use_uds:
-            # UDS를 사용할 때
-            redis_uds_path = config.get('REDIS', 'UDS_PATH')
-            logger.info(f"Connecting to Redis UDS at {redis_uds_path}")
-            redis_client = redis.Redis(unix_socket_path=redis_uds_path, db=redis_db)
-        else:
-            # TCP를 사용할 때
-            redis_host = config.get('REDIS', 'HOST')
-            redis_port = int(config.get('REDIS', 'PORT'))
-            logger.info(f"Connecting to Redis at {redis_host}:{redis_port}")
-            redis_client = redis.Redis(host=redis_host, port=redis_port, db=redis_db, decode_responses=False)
-        
-        await redis_client.ping()
-        logger.success("Successfully connected to Redis.")
-
-        # 서브 프로세스 시작
+        redis_client = await connect_to_redis(config)
+    except redis.ConnectionError as e:
+        logger.error(f"Failed to connect to Redis: {e}")
+        return
+    except redis.TimeoutError as e:
+        logger.error(f"Redis connection timeout: {e}")
+        return
+    except Exception as e:
+        logger.error(f"Unexpected error during Redis connection: {e}")
+        logger.exception(e)
+        return
+    
+    # 2. 워커 프로세스 시작
+    try:
         max_workers = int(config.get('STABLEDIFFUSION', 'MAX_WORKER', fallback=1))
-
-        for i in range(max_workers):
-            process_name = f'LLE_worker_{i}'
-            worker_process = create_worker_subprocess(
-                config_path=config_path,
-                worker_type='StableDiffusion',
-                process_name=process_name,
-            )
-            worker_process.start()
-            worker_processes.append(worker_process)
-            logger.info(f"WORKER(PID {worker_process.pid}) - Worker process starting.")
-
-        # <--- 2. time.sleep()을 asyncio.sleep()으로 변경
-        await asyncio.sleep(1) 
-
-        # 모든 워커가 살아있는지 확인
-        for p in worker_processes:
-            if not p.is_alive():
-                logger.error(f"WORKER(PID {p.pid}) - Worker process failed to start.")
-                raise SystemExit("Worker process failed to start.")
-        logger.success(f"All {len(worker_processes)} worker processes are alive.")
-
-        # gRPC 서버 설정
-        grpc_port = int(config['GRPC']['PORT'])
-        message_length = int(config['GRPC']['MAX_MESSAGE_LENGTH'])
-        options = [
-            ('grpc.max_send_message_length', message_length),
-            ('grpc.max_receive_message_length', message_length),
-        ]
-        
-        # gRPC 서버 시작
-        server = grpc.server(options=options)
-        
-        # Servicer 생성 및 추가
-        queue_key = config.get('STABLEDIFFUSION', 'QUEUE_KEY')
-        result_key_prefix = config.get('STABLEDIFFUSION', 'RESULT_KEY_PREFIX')
-        result_channel_prefix = config.get('STABLEDIFFUSION', 'RESULT_CHANNEL_PREFIX')
-        processing_timeout = int(config.get('STABLEDIFFUSION', 'TIMEOUT'))
-
-        servicer = DiffusionProcessingServicer(
-            redis_client=redis_client,
-            queue_key=queue_key,
-            result_key_prefix=result_key_prefix,
-            result_channel_prefix=result_channel_prefix,
-            processing_timeout=processing_timeout,
+        workers_started = await lifecycle_manager.start_workers(
+            create_worker_fn=create_worker_subprocess,
+            worker_count=max_workers,
+            config_path=config_path,
+            worker_type='StableDiffusion'
         )
-        diffusion_processing_pb2_grpc.add_ImageGeneratorServicer_to_server(servicer, server)
         
-        server.add_insecure_port(f'[::]:{grpc_port}')
-        await server.start()
-        logger.success(f"gRPC server started on port {grpc_port}. Waiting for requests...")
-        await server.wait_for_termination()
-
+        if not workers_started:
+            raise RuntimeError("Failed to start worker processes.")
+            
+    except RuntimeError as e:
+        logger.error(f"Worker startup failed: {e}")
+        await cleanup_redis(redis_client)
+        return
+    except Exception as e:
+        logger.error(f"Unexpected error during worker startup: {e}")
+        logger.exception(e)
+        await cleanup_redis(redis_client)
+        return
+    
+    # 3. Watchdog 프로세스 시작
+    try:
+        lifecycle_manager.start_watchdog(create_watchdog_subprocess)
+        logger.info("Watchdog process started successfully.")
+    except Exception as e:
+        logger.error(f"Failed to start watchdog process: {e}")
+        logger.exception(e)
+        await cleanup_partial(redis_client, None, lifecycle_manager)
+        return
+    
+    # 4. gRPC 서버 시작 및 실행
+    try:
+        server = await setup_grpc_server(config, redis_client)
+        await wait_for_shutdown(server, shutdown_event)
+        
+    except grpc.RpcError as e:
+        logger.error(f"gRPC server error: {e}")
+        logger.exception(e)
+    except OSError as e:
+        logger.error(f"Failed to bind gRPC server port: {e}")
+        logger.exception(e)
     except KeyboardInterrupt:
         logger.warning("Server stopping due to KeyboardInterrupt.")
     except Exception as e:
-        logger.critical(f"A critical error occurred: {e}")
+        logger.critical(f"Unexpected error during server operation: {e}")
         logger.exception(e)
     finally:
-        logger.info("Initiating shutdown sequence.")
-        if server:
-            await server.stop(grace=1)
-            logger.info("gRPC server stopped.")
-        if worker_processes:
-            logger.info("Terminating worker processes...")
-            for p in worker_processes:
-                if p.is_alive():
-                    os.kill(p.pid, signal.SIGINT)
-            
-            # 모든 프로세스가 종료될 때까지 잠시 대기
-            for p in worker_processes:
-                p.join(timeout=10)
-                if p.is_alive():
-                    logger.warning(f"Worker process (PID: {p.pid}) did not terminate gracefully. Forcing termination...")
-                    p.terminate()
-            logger.info("All worker processes terminated.")
-        logger.success("Shutdown complete.")
+        await cleanup_all(server, redis_client, lifecycle_manager)
 
 
 if __name__ == '__main__':
-    import multiprocessing
+    # Multiprocessing 설정
     try:
         multiprocessing.set_start_method('spawn', force=True)
-        # print("Successfully set multiprocessing start method to 'spawn'.")
     except RuntimeError:
-        print("Multiprocessing start method already set or 'spawn' not available with force=True.")
+        print("Multiprocessing start method already set or 'spawn' not available.")
 
+    # 인자 파싱
     parser = argparse.ArgumentParser(description='Image Processing Server')
-    parser.add_argument('--config', type=str, default='./ai_server_config.ini', help='Path to the configuration file')
+    parser.add_argument(
+        '--config',
+        type=str,
+        default='./ai_server_config.ini',
+        help='Path to the configuration file'
+    )
     args = parser.parse_args()
 
+    # 서버 실행
     try:
         asyncio.run(run_server(args.config))
     except KeyboardInterrupt:
-        logger.info("Server process interrupted by user.")
+        # KeyboardInterrupt는 run_server의 finally에서 처리
+        pass
+    except Exception as e:
+        logger.error(f"Unexpected error in main: {e}")
+        logger.exception(e)
