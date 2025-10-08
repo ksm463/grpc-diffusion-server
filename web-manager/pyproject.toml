@@ -16,6 +16,8 @@ dependencies = [
     "pillow-heif==0.22.0",
     "prometheus-fastapi-instrumentator>=7.1.0",
     "pydantic-settings>=2.10.1",
+    "pytest>=8.4.2",
+    "pytest-asyncio>=1.2.0",
     "supabase>=2.17.0",
 ]
 

@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim as base
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Seoul
@@ -19,3 +19,13 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-cache
 
 COPY . .
+
+# ---- Test Stage (CI용) ----
+FROM base as test
+
+# pytest는 이미 dependencies에 포함됨
+# 테스트 실행 명령
+CMD ["uv", "run", "pytest", "tests/test_basic.py", "-v"]
+
+# ---- Production Stage ----
+FROM base as production
