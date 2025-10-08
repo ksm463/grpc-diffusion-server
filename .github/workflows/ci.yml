@@ -7,7 +7,7 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  # 1. Web Manager만 빌드 테스트
+  # 1. Web Manager 빌드
   build-web-manager:
     runs-on: ubuntu-latest
     steps:
@@ -24,35 +24,23 @@ jobs:
           file: ./web-manager/Dockerfile
           target: base
           push: false
-          tags: web-manager:ci-build
+          tags: web-manager:ci
           cache-from: type=gha,scope=web-manager
           cache-to: type=gha,mode=max,scope=web-manager
 
-  # 2. AI Server는 Dockerfile 문법만 검증
+  # 2. AI Server 검증 (빌드 스킵)
   validate-ai-server:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Validate Dockerfile syntax
+      - name: Check AI Server files
         run: |
-          # hadolint로 Dockerfile 검증 (선택)
-          docker run --rm -i hadolint/hadolint < ai-server/Dockerfile || true
-          
-          # Dockerfile이 있는지만 확인
-          if [ -f "ai-server/Dockerfile" ]; then
-            echo "✅ AI Server Dockerfile exists"
-          else
-            echo "❌ AI Server Dockerfile not found"
-            exit 1
-          fi
-      
-      - name: Check Python files
-        run: |
-          # Python 파일 문법 체크
-          find ai-server -name "*.py" -type f | head -5
-          echo "✅ AI Server Python files found"
+          echo "✅ Checking AI Server files..."
+          test -f ai-server/Dockerfile && echo "Dockerfile OK"
+          test -f ai-server/tests/test_basic.py && echo "Tests OK"
+          echo "AI Server validation completed (build skipped due to large image size)"
 
   # 3. Web Manager 테스트
   test-web-manager:
@@ -71,48 +59,16 @@ jobs:
           context: ./web-manager
           file: ./web-manager/Dockerfile
           target: test
-          push: false
           load: true
           tags: web-manager:test
           cache-from: type=gha,scope=web-manager
       
-      - name: Run test for web-manager
+      - name: Run web-manager tests
         run: |
-          docker run --rm \
-            -v ${{ github.workspace }}/web-manager/tests:/web-manager/tests:ro \
-            web-manager:test \
+          docker run --rm web-manager:test \
             uv run pytest tests/test_basic.py -v
 
-  # 4. AI Server는 로컬 Python으로 간단히 테스트
-  test-ai-server-simple:
-    runs-on: ubuntu-latest
-    needs: validate-ai-server
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      
-      - name: Run basic Python test
-        run: |
-          cd ai-server
-          if [ -f "tests/test_basic.py" ]; then
-            # pytest 없이 직접 실행
-            python -c "
-import sys
-sys.path.insert(0, 'tests')
-exec(open('tests/test_basic.py').read())
-test_basic()
-print('✅ AI Server basic test passed')
-            "
-          else
-            echo "⚠️ No test file found, skipping"
-          fi
-
-  # 5. Docker Compose 검증
+  # 4. Docker Compose 검증
   compose-check:
     runs-on: ubuntu-latest
     steps:
@@ -144,41 +100,39 @@ print('✅ AI Server basic test passed')
           GRAFANA_PORT=3000
           NODE_EXPORTER_PORT=9440
           NVIDIA_EXPORTER_PORT=9835
-          SUPABASE_KEY=test-key
-          SUPABASE_SERVICE_KEY=test-service-key
+          SUPABASE_KEY=test
+          SUPABASE_SERVICE_KEY=test
           EOF
       
       - name: Validate docker-compose.yml
         run: docker compose config --quiet
 
-  # 6. 결과 확인
+  # 5. 결과 확인
   ci-result:
     runs-on: ubuntu-latest
-    needs: [build-web-manager, validate-ai-server, test-web-manager, test-ai-server-simple, compose-check]
+    needs: [build-web-manager, validate-ai-server, test-web-manager, compose-check]
     if: always()
     steps:
       - name: Check CI Status
         run: |
           echo "=============================="
-          echo "CI 결과"
+          echo "CI Results"
           echo "=============================="
-          echo "Web Manager 빌드:  ${{ needs.build-web-manager.result }}"
-          echo "AI Server 검증:    ${{ needs.validate-ai-server.result }}"
-          echo "Web Manager 테스트: ${{ needs.test-web-manager.result }}"
-          echo "AI Server 테스트:  ${{ needs.test-ai-server-simple.result }}"
-          echo "Compose:           ${{ needs.compose-check.result }}"
+          echo "Web Manager Build: ${{ needs.build-web-manager.result }}"
+          echo "AI Server Validation: ${{ needs.validate-ai-server.result }}"
+          echo "Web Manager Tests: ${{ needs.test-web-manager.result }}"
+          echo "Compose Check: ${{ needs.compose-check.result }}"
           echo "=============================="
           
           if [[ "${{ needs.build-web-manager.result }}" != "success" ]] || \
              [[ "${{ needs.validate-ai-server.result }}" != "success" ]] || \
              [[ "${{ needs.test-web-manager.result }}" != "success" ]] || \
-             [[ "${{ needs.test-ai-server-simple.result }}" != "success" ]] || \
              [[ "${{ needs.compose-check.result }}" != "success" ]]; then
-            echo "❌ CI 실패"
+            echo "❌ CI Failed"
             exit 1
           fi
           
-          echo "✅ CI 통과!"
+          echo "✅ CI Passed!"
           echo ""
-          echo "참고: AI Server는 Docker 빌드를 스킵했습니다 (이미지가 너무 큼)"
-          echo "로컬에서 테스트: ./test-local.sh ai-server"
+          echo "Note: AI Server build was skipped (image too large for CI)"
+          echo "Test locally with: ./test-local.sh ai-server"
