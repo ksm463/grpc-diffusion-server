@@ -138,4 +138,8 @@ if __name__ == '__main__':
     try:
         asyncio.run(run_server(args.config))
     except KeyboardInterrupt:
-        logger.info("Server process interrupted by user.")
+        # KeyboardInterrupt는 run_server의 finally에서 처리
+        pass
+    except Exception as e:
+        logger.error(f"Unexpected error in main: {e}")
+        logger.exception(e)
