@@ -28,10 +28,12 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ./ai-server:/ai-server
+      - ./protos:/ai-server/src/protos
       - /etc/localtime:/etc/localtime:ro
     networks:
       - diffusion-net
-    command: /bin/bash -c "cd src && uv run main.py"
+    # command: /bin/bash -c "cd src && uv run main.py"
+    command: tail -f /dev/null
     deploy:
       resources:
         reservations:
@@ -67,9 +69,11 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ./web-manager:/web-manager
+      - ./protos:/web-manager/app/protos
     networks:
       - diffusion-net
-    command: /bin/bash -c "cd app && uv run main.py"
+    # command: /bin/bash -c "cd app && uv run main.py"
+    command: tail -f /dev/null
 
   # 레디스 서비스
   redis-server:
