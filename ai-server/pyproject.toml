@@ -4,8 +4,9 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
+
+# CI에서도 작동하는 기본 의존성 (GPU 제외)
 dependencies = [
-    "cucim-cu12>=25.4.0",
     "grpcio==1.71.0",
     "grpcio-tools==1.71.0",
     "icecream>=2.1.4",
@@ -16,6 +17,12 @@ dependencies = [
     "loguru>=0.7.3",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.0.0",
+]
+
+# GPU 전용 의존성을 선택적 그룹으로 분리
+[project.optional-dependencies]
+gpu = [
+    "cucim-cu12>=25.4.0",
     "torchvision>=0.23.0",
     "diffusers>=0.35.1",
     "transformers>=4.55.4",
@@ -32,4 +39,5 @@ dev = [
 [tool.pytest.ini_options]
 markers = [
     "slow: marks tests as slow to run",
+    "gpu: marks tests that require GPU",
 ]

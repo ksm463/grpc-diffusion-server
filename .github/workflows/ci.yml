@@ -1,5 +1,3 @@
-name: CI
-
 on:
   push:
     branches: [ main, develop ]
@@ -7,7 +5,7 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  # 1. Web Manager 빌드
+  # 1. Web Manager 빌드 & 테스트
   build-web-manager:
     runs-on: ubuntu-latest
     steps:
@@ -28,21 +26,6 @@ jobs:
           cache-from: type=gha,scope=web-manager
           cache-to: type=gha,mode=max,scope=web-manager
 
-  # 2. AI Server 검증 (빌드 스킵)
-  validate-ai-server:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Check AI Server files
-        run: |
-          echo "✅ Checking AI Server files..."
-          test -f ai-server/Dockerfile && echo "Dockerfile OK"
-          test -f ai-server/tests/test_basic.py && echo "Tests OK"
-          echo "AI Server validation completed (build skipped due to large image size)"
-
-  # 3. Web Manager 테스트
   test-web-manager:
     runs-on: ubuntu-latest
     needs: build-web-manager
@@ -65,10 +48,54 @@ jobs:
       
       - name: Run web-manager tests
         run: |
-          docker run --rm web-manager:test \
-            uv run pytest tests/test_basic.py -v
+          docker run --rm web-manager:test uv run pytest tests/ -v
 
-  # 4. Docker Compose 검증
+  # 2. AI Server 빌드 & 테스트 (CI 전용 Dockerfile 사용!)
+  build-ai-server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build ai-server (CI version)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai-server
+          file: ./ai-server/Dockerfile.ci
+          target: base
+          push: false
+          tags: ai-server:ci
+          cache-from: type=gha,scope=ai-server-ci
+          cache-to: type=gha,mode=max,scope=ai-server-ci
+
+  test-ai-server:
+    runs-on: ubuntu-latest
+    needs: build-ai-server
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Build ai-server test stage (CI version)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./ai-server
+          file: ./ai-server/Dockerfile.ci
+          target: test
+          load: true
+          tags: ai-server:ci-test
+          cache-from: type=gha,scope=ai-server-ci
+      
+      - name: Run ai-server tests (CPU only)
+        run: |
+          docker run --rm ai-server:ci-test
+
+  # 3. Docker Compose 검증
   compose-check:
     runs-on: ubuntu-latest
     steps:
@@ -77,10 +104,9 @@ jobs:
       
       - name: Create .env file
         run: |
-          cat > .env << 'EOF'
+          cat > .env << 'EOFENV'
           AI_SERVER_IMAGE_NAME=ai-server
           AI_SERVER_IMAGE_TAG=test
-          AI_SERVER_BUILD_ARG_POINT=dev
           WEB_MANAGER_IMAGE_NAME=web-manager
           WEB_MANAGER_IMAGE_TAG=test
           REDIS_IMAGE_NAME=redis
@@ -102,31 +128,33 @@ jobs:
           NVIDIA_EXPORTER_PORT=9835
           SUPABASE_KEY=test
           SUPABASE_SERVICE_KEY=test
-          EOF
+          EOFENV
       
       - name: Validate docker-compose.yml
         run: docker compose config --quiet
 
-  # 5. 결과 확인
+  # 4. 결과 확인
   ci-result:
     runs-on: ubuntu-latest
-    needs: [build-web-manager, validate-ai-server, test-web-manager, compose-check]
+    needs: [build-web-manager, test-web-manager, build-ai-server, test-ai-server, compose-check]
     if: always()
     steps:
       - name: Check CI Status
         run: |
-          echo "=============================="
+          echo "=========================================="
           echo "CI Results"
-          echo "=============================="
-          echo "Web Manager Build: ${{ needs.build-web-manager.result }}"
-          echo "AI Server Validation: ${{ needs.validate-ai-server.result }}"
-          echo "Web Manager Tests: ${{ needs.test-web-manager.result }}"
-          echo "Compose Check: ${{ needs.compose-check.result }}"
-          echo "=============================="
+          echo "=========================================="
+          echo "Web Manager Build:  ${{ needs.build-web-manager.result }}"
+          echo "Web Manager Tests:  ${{ needs.test-web-manager.result }}"
+          echo "AI Server Build:    ${{ needs.build-ai-server.result }}"
+          echo "AI Server Tests:    ${{ needs.test-ai-server.result }}"
+          echo "Compose Check:      ${{ needs.compose-check.result }}"
+          echo "=========================================="
           
           if [[ "${{ needs.build-web-manager.result }}" != "success" ]] || \
-             [[ "${{ needs.validate-ai-server.result }}" != "success" ]] || \
              [[ "${{ needs.test-web-manager.result }}" != "success" ]] || \
+             [[ "${{ needs.build-ai-server.result }}" != "success" ]] || \
+             [[ "${{ needs.test-ai-server.result }}" != "success" ]] || \
              [[ "${{ needs.compose-check.result }}" != "success" ]]; then
             echo "❌ CI Failed"
             exit 1
@@ -134,5 +162,7 @@ jobs:
           
           echo "✅ CI Passed!"
           echo ""
-          echo "Note: AI Server build was skipped (image too large for CI)"
-          echo "Test locally with: ./test-local.sh ai-server"
+          echo "📝 Notes:"
+          echo "  - AI Server: Tested with CPU-only Dockerfile.ci"
+          echo "  - Web Manager: Full Docker build and tests"
+          echo "  - GPU tests: Run locally with ./test-local.sh ai-server"
