@@ -1,0 +1,37 @@
+# ai-server/Dockerfile.ci
+# CI 전용 - 가벼운 Python 이미지 사용
+
+FROM python:3.10-slim as base
+
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-c"]
+ENV LANG=C.UTF-8
+
+# 기본 패키지 설치
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# uv 설치
+RUN pip install -U --no-cache-dir pip && \
+    pip install --no-cache-dir uv
+
+WORKDIR /ai-server
+
+# pyproject.toml 복사
+COPY pyproject.toml ./
+
+# 기본 의존성만 설치 (GPU 제외)
+# --no-dev: dev 의존성 제외
+# 기본 dependencies만 설치 (optional-dependencies[gpu]는 제외)
+RUN uv pip install --system --no-cache -e .
+
+# 소스 코드 복사
+COPY . .
+
+# ---- Test Stage ----
+FROM base as test
+
+# 테스트 실행 명령
+CMD ["pytest", "tests/test_basic.py", "-v"]

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GPU Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
+    <link rel="stylesheet" href="/web/static/css/_navbar.css">
+    <link rel="stylesheet" href="/web/static/css/status_pages.css">
+</head>
+<body>
+    {% include 'partials/_navbar.html' %}
+    <div id="grafana-iframe-container">
+        <iframe id="grafana-dashboard"
+            src="http://192.168.10.11:53000/d/vlvPlrgnk/nvidia-gpu-metrics?orgId=1&from=now-30m&to=now&timezone=browser&var-job=gpu-exporter&var-node=192.168.10.11:59835&var-gpu=29bfa0ad-77d1-9656-7781-1ef3180e9da9&refresh=10s&kiosk">
+                
+        </iframe>
+    </div>
+    <script src="/web/static/js/auth.js"></script>
+</body>
+</html>

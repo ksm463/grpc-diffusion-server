@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Stable Diffusion Studio</title>
+    <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
+    <link rel="stylesheet" href="/web/static/css/_navbar.css">
+    <link rel="stylesheet" href="/web/static/css/studio.css">
+</head>
+<body>
+    {% include 'partials/_navbar.html' %}
+    <div id="container">
+        <div class="container-header">Stable Diffusion 3.5 Studio </div>
+
+        <div class="content">
+
+            <div class="input-group">
+                <label for="prompt-input">프롬프트 (Prompt)</label>
+                <textarea id="prompt-input" name="prompt" rows="4" placeholder="예: A photorealistic image of an astronaut riding a horse"></textarea>
+            </div>
+
+            <button id="generate-button">이미지 생성 (Generate)</button>
+
+            <details class="advanced-settings">
+                <summary>고급 설정 (Advanced Settings)</summary>
+                <div class="settings-content">
+                    <div class="setting-item">
+                        <label for="guidance-scale">가이던스 스케일 (Guidance Scale): <span id="guidance-scale-value">7.0</span></label>
+                        <input type="range" id="guidance-scale" name="guidance_scale" min="1" max="20" value="7.0" step="0.1">
+                    </div>
+                    <div class="setting-item">
+                        <label for="inference-steps">추론 단계 수 (Number of Inference Steps): <span id="inference-steps-value">28</span></label>
+                        <input type="range" id="inference-steps" name="num_inference_steps" min="10" max="50" value="28" step="1">
+                    </div>
+                    <div class="setting-item">
+                        <label for="width">이미지 너비 (Width): <span id="width-value">1024</span>px</label>
+                        <input type="range" id="width" name="width" min="512" max="1536" value="1024" step="64">
+                    </div>
+                    <div class="setting-item">
+                        <label for="height">이미지 높이 (Height): <span id="height-value">1024</span>px</label>
+                        <input type="range" id="height" name="height" min="512" max="1536" value="1024" step="64">
+                    </div>
+                    <div class="setting-item seed-container">
+                        <label for="seed-input">시드 (Seed)</label>
+                        <input type="number" id="seed-input" name="seed" placeholder="비워두면 랜덤으로 설정합니다.">
+                        <button id="random-seed-button" title="랜덤 시드 생성">🎲</button>
+                    </div>
+                </div>
+            </details>
+
+            <div class="result-area">
+                <h2>결과 이미지 (Result Image)</h2>
+                <div id="result-image-wrapper">
+                    <p>이곳에 생성된 이미지가 표시됩니다.</p>
+                </div>
+            </div>
+
+    <script src="/web/static/js/auth.js"></script>
+    <script src="/web/static/js/studio.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>My Images Gallery</title>
+    <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
+    <link rel="stylesheet" href="/web/static/css/_navbar.css">
+    <link rel="stylesheet" href="/web/static/css/gallery.css">
+</head>
+<body>
+    {% include 'partials/_navbar.html' %}
+    <div id="container">
+        <div class="container-header">내 이미지 갤러리</div>
+        <main id="app">
+            <div id="gallery-grid">
+                <p id="gallery-placeholder">이미지를 불러오는 중입니다...</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="/web/static/js/auth.js"></script>
+    <script src="/web/static/js/gallery.js"></script>
+</body>
+</html>

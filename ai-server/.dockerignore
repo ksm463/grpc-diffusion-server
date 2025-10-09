@@ -1,0 +1,84 @@
+# AI Server .dockerignore
+# 빌드 컨텍스트에서 제외할 파일들
+
+# 모델 파일 (가장 중요!)
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.onnx
+*.pkl
+*.h5
+*.pb
+
+# 모델 디렉토리
+ai-server/src/model/
+models/
+checkpoints/
+weights/
+pretrained/
+cache/
+huggingface/
+.cache/
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 로그
+*.log
+logs/
+
+# 테스트
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Git
+.git/
+.gitignore
+
+# 임시 파일
+*.tmp
+tmp/
+temp/
+*.zip
+*.tar.gz
+*.7z
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# 데이터 파일
+*.csv
+*.json
+*.xml
+data/
+dataset/
+
+# OS
+.DS_Store
+Thumbs.db
