@@ -151,7 +151,7 @@ async def update_my_password(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # --- 전체 사용자 목록 (관리자 전용) ---
-@account_router.get("/users/", response_model=List[UserRead], tags=["auth"])
+@account_router.get("/users/", tags=["auth"])
 async def list_all_users(
     admin_user: SupabaseUser = Depends(get_current_superuser),
     supabase_admin: Client = Depends(get_supabase_admin_client),

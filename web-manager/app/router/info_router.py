@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pathlib import Path
 import os
 
-from utility.request import get_server_config, get_logger
+from utility.request import get_server_config, get_manager_config, get_logger
 
 
 info_router = APIRouter()
@@ -47,14 +47,14 @@ async def get_dummy_info_info(request: Request, server_config = Depends(get_serv
 
 @info_router.get("/api/info/proto", response_class=PlainTextResponse)
 async def get_proto_content(
-    server_config = Depends(get_server_config),
+    manager_config = Depends(get_manager_config),
     logger = Depends(get_logger)
 ):
-    if not server_config or 'GLOBAL' not in server_config or 'PROTO_BUFF_PATH' not in server_config['GLOBAL']:
-        logger.error("Configuration error: PROTO_BUFF_PATH not found in grpc config['GLOBAL']")
+    if not manager_config or 'ENV' not in manager_config or 'PROTO_BUFF_PATH' not in manager_config['ENV']:
+        logger.error("Configuration error: PROTO_BUFF_PATH not found in manager_config['ENV']")
         raise HTTPException(status_code=500, detail="Server configuration error: PROTO_BUFF_PATH is not set.")
 
-    proto_file_path_str = server_config['GLOBAL']['PROTO_BUFF_PATH']
+    proto_file_path_str = manager_config['ENV']['PROTO_BUFF_PATH']
     proto_file_path = Path(proto_file_path_str)
 
     logger.info(f"Attempting to read PROTO file from: {proto_file_path}")

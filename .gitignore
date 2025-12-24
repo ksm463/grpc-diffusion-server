@@ -192,3 +192,9 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# 모든 마크다운(Markdown) 파일(.md)을 무시
+*.md
+
+# 루트 디렉터리의 README.md 파일은 예외
+!README.md
