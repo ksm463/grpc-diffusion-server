@@ -394,9 +394,6 @@ name = "grpc-ai-server"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "accelerate" },
-    { name = "cucim-cu12" },
-    { name = "diffusers" },
     { name = "grpcio" },
     { name = "grpcio-tools" },
     { name = "icecream" },
@@ -407,6 +404,13 @@ dependencies = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "redis" },
+]
+
+[package.optional-dependencies]
+gpu = [
+    { name = "accelerate" },
+    { name = "cucim-cu12" },
+    { name = "diffusers" },
     { name = "safetensors" },
     { name = "sentencepiece" },
     { name = "torchvision" },
@@ -420,9 +424,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "accelerate", specifier = ">=1.10.0" },
-    { name = "cucim-cu12", specifier = ">=25.4.0" },
-    { name = "diffusers", specifier = ">=0.35.1" },
+    { name = "accelerate", marker = "extra == 'gpu'", specifier = ">=1.10.0" },
+    { name = "cucim-cu12", marker = "extra == 'gpu'", specifier = ">=25.4.0" },
+    { name = "diffusers", marker = "extra == 'gpu'", specifier = ">=0.35.1" },
     { name = "grpcio", specifier = "==1.71.0" },
     { name = "grpcio-tools", specifier = "==1.71.0" },
     { name = "icecream", specifier = ">=2.1.4" },
@@ -433,11 +437,12 @@ requires-dist = [
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "redis", specifier = ">=5.2.1" },
-    { name = "safetensors", specifier = ">=0.6.2" },
-    { name = "sentencepiece", specifier = ">=0.2.1" },
-    { name = "torchvision", specifier = ">=0.23.0" },
-    { name = "transformers", specifier = ">=4.55.4" },
+    { name = "safetensors", marker = "extra == 'gpu'", specifier = ">=0.6.2" },
+    { name = "sentencepiece", marker = "extra == 'gpu'", specifier = ">=0.2.1" },
+    { name = "torchvision", marker = "extra == 'gpu'", specifier = ">=0.23.0" },
+    { name = "transformers", marker = "extra == 'gpu'", specifier = ">=4.55.4" },
 ]
+provides-extras = ["gpu"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "ipykernel", specifier = ">=6.29.5" }]

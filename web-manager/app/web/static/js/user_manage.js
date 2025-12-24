@@ -144,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           users.forEach(user => {
               const row = userListTableBody.insertRow();
-              const isSuperuser = user.user_metadata && user.user_metadata.role === 'admin';
-              const isVerified = user.email_confirmed_at !== null;
+              const isSuperuser = user.is_superuser || (user.user_metadata && user.user_metadata.role === 'admin');
+              const isVerified = user.is_verified || user.email_confirmed_at !== null;
 
               row.insertCell().textContent = user.email;
               row.insertCell().textContent = user.id;

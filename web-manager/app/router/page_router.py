@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -52,9 +53,25 @@ async def load_fastapi_status_page(request: Request, logger = Depends(get_logger
 @page_router.get("/status/cpu", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_cpu_status_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received CPU status page load request: {request.method} from {request.client.host}")
-    return templates.TemplateResponse("status/cpu_status.html", {"request": request, "user": None})
+    # Build Grafana URL from environment variables
+    host_ip = os.getenv('HOST_IP', 'localhost')
+    grafana_port = os.getenv('GRAFANA_PORT', '23000')
+    grafana_base_url = f"http://{host_ip}:{grafana_port}"
+    return templates.TemplateResponse("status/cpu_status.html", {
+        "request": request,
+        "user": None,
+        "grafana_base_url": grafana_base_url
+    })
 
 @page_router.get("/status/gpu", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 async def load_gpu_status_page(request: Request, logger = Depends(get_logger)):
     logger.info(f"Received GPU status page load request: {request.method} from {request.client.host}")
-    return templates.TemplateResponse("status/gpu_status.html", {"request": request, "user": None})
+    # Build Grafana URL from environment variables
+    host_ip = os.getenv('HOST_IP', 'localhost')
+    grafana_port = os.getenv('GRAFANA_PORT', '23000')
+    grafana_base_url = f"http://{host_ip}:{grafana_port}"
+    return templates.TemplateResponse("status/gpu_status.html", {
+        "request": request,
+        "user": None,
+        "grafana_base_url": grafana_base_url
+    })
