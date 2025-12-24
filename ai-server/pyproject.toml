@@ -15,8 +15,6 @@ dependencies = [
     "redis>=5.2.1",
     "numpy<2.0",
     "loguru>=0.7.3",
-    "pytest>=8.4.1",
-    "pytest-asyncio>=1.0.0",
 ]
 
 # GPU 전용 의존성을 선택적 그룹으로 분리
@@ -30,6 +28,14 @@ gpu = [
     "safetensors>=0.6.2",
     "sentencepiece>=0.2.1",
 ]
+test = [
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "fakeredis[lua]>=2.27.3",
+    "grpcio-testing>=1.71.0",
+]
 
 [dependency-groups]
 dev = [
@@ -37,7 +43,40 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=20",
+]
 markers = [
     "slow: marks tests as slow to run",
     "gpu: marks tests that require GPU",
+    "integration: marks tests as integration tests",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/protos/*_pb2*.py",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
 ]

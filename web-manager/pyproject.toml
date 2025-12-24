@@ -16,9 +16,17 @@ dependencies = [
     "pillow-heif==0.22.0",
     "prometheus-fastapi-instrumentator>=7.1.0",
     "pydantic-settings>=2.10.1",
+    "supabase>=2.17.0",
+]
+
+[project.optional-dependencies]
+test = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
-    "supabase>=2.17.0",
+    "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
+    "fakeredis[lua]>=2.27.3",
+    "respx>=0.21.1",
 ]
 
 [build-system]
@@ -29,3 +37,41 @@ backend-path = ["."]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--cov=app",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "--cov-fail-under=20",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/protos/*_pb2*.py",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
