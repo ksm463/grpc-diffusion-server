@@ -5,6 +5,7 @@ import pytest
 from unittest.mock import Mock, AsyncMock, patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from gotrue.errors import AuthApiError
 from router.account_router import account_router
 
 
@@ -210,6 +211,47 @@ class TestLogout:
         # Assertions
         assert response.status_code == 401
 
+    def test_returns_500_when_logout_fails(self, client, mock_supabase, mock_logger, mock_user):
+        """Should return 500 when sign_out raises exception"""
+        # Mock sign_out to raise exception
+        mock_supabase.auth.sign_out.side_effect = Exception("Logout failed")
+
+        # Override dependencies
+        from router.account_router import get_current_user, get_supabase_client, get_logger
+        client.app.dependency_overrides[get_current_user] = lambda: mock_user
+        client.app.dependency_overrides[get_supabase_client] = lambda: mock_supabase
+        client.app.dependency_overrides[get_logger] = lambda: mock_logger
+
+        # Make request
+        response = client.post(
+            "/auth/logout",
+            headers={"Authorization": "Bearer test_token_123"}
+        )
+
+        # Assertions
+        assert response.status_code == 500
+        assert "sign out" in response.json()["detail"].lower()
+
+
+class TestAuthenticatedRoute:
+    """Test GET /authenticated-route endpoint"""
+
+    def test_returns_greeting_for_authenticated_user(self, client, mock_logger, mock_user):
+        """Should return greeting for authenticated user"""
+        # Override dependencies
+        from router.account_router import get_current_user, get_logger
+        client.app.dependency_overrides[get_current_user] = lambda: mock_user
+        client.app.dependency_overrides[get_logger] = lambda: mock_logger
+
+        # Make request
+        response = client.get("/authenticated-route")
+
+        # Assertions
+        assert response.status_code == 200
+        data = response.json()
+        assert "message" in data
+        assert mock_user.email in data["message"]
+
 
 class TestGetMyInfo:
     """Test GET /users/me endpoint"""
@@ -293,6 +335,28 @@ class TestUpdateMyPassword:
         # Assertions
         assert response.status_code == 422  # Validation error
 
+    def test_returns_400_when_update_fails(self, client, mock_user, mock_logger):
+        """Should return 400 when password update fails"""
+        # Mock admin client to raise exception
+        mock_admin = Mock()
+        mock_admin.auth.admin.update_user_by_id.side_effect = Exception("Update failed")
+
+        # Override dependencies
+        from router.account_router import get_current_user, get_supabase_admin_client, get_logger
+        client.app.dependency_overrides[get_current_user] = lambda: mock_user
+        client.app.dependency_overrides[get_supabase_admin_client] = lambda: mock_admin
+        client.app.dependency_overrides[get_logger] = lambda: mock_logger
+
+        # Make request
+        response = client.patch(
+            "/users/me/password",
+            json={"new_password": "newpassword123"}
+        )
+
+        # Assertions
+        assert response.status_code == 400
+        assert "Update failed" in response.json()["detail"]
+
 
 class TestListAllUsers:
     """Test GET /users/ endpoint (admin only)"""
@@ -334,6 +398,25 @@ class TestListAllUsers:
         assert len(data["users"]) == 2
         mock_admin.auth.admin.list_users.assert_called_once()
 
+    def test_returns_500_when_list_users_fails(self, client, mock_admin_user, mock_logger):
+        """Should return 500 when listing users fails"""
+        # Mock admin client to raise exception
+        mock_admin = Mock()
+        mock_admin.auth.admin.list_users.side_effect = Exception("Database error")
+
+        # Override dependencies
+        from router.account_router import get_current_superuser, get_supabase_admin_client, get_logger
+        client.app.dependency_overrides[get_current_superuser] = lambda: mock_admin_user
+        client.app.dependency_overrides[get_supabase_admin_client] = lambda: mock_admin
+        client.app.dependency_overrides[get_logger] = lambda: mock_logger
+
+        # Make request
+        response = client.get("/users/")
+
+        # Assertions
+        assert response.status_code == 500
+        assert "Could not retrieve users list" in response.json()["detail"]
+
 
 class TestDeleteUserByAdmin:
     """Test DELETE /users/{user_id} endpoint (admin only)"""
@@ -374,3 +457,24 @@ class TestDeleteUserByAdmin:
         # Assertions
         assert response.status_code == 400
         assert "cannot delete their own" in response.json()["detail"].lower()
+
+    def test_returns_404_when_user_not_found(self, client, mock_admin_user, mock_logger):
+        """Should return 404 when user to delete is not found"""
+        # Mock admin client to raise AuthApiError
+        mock_admin = Mock()
+        # Create AuthApiError with proper message attribute
+        auth_error = AuthApiError("User not found", code="404", status=404)
+        mock_admin.auth.admin.delete_user.side_effect = auth_error
+
+        # Override dependencies
+        from router.account_router import get_current_superuser, get_supabase_admin_client, get_logger
+        client.app.dependency_overrides[get_current_superuser] = lambda: mock_admin_user
+        client.app.dependency_overrides[get_supabase_admin_client] = lambda: mock_admin
+        client.app.dependency_overrides[get_logger] = lambda: mock_logger
+
+        # Make request
+        response = client.delete("/users/nonexistent-user-123")
+
+        # Assertions
+        assert response.status_code == 404
+        assert "User not found" in response.json()["detail"]
