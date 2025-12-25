@@ -3,6 +3,13 @@ Pytest fixtures for web-manager tests.
 
 This module provides common fixtures used across all tests.
 """
+import sys
+from pathlib import Path
+
+# Add app directory to Python path
+app_dir = Path(__file__).parent.parent / "app"
+sys.path.insert(0, str(app_dir))
+
 import pytest
 from unittest.mock import Mock, AsyncMock
 from typing import AsyncGenerator
