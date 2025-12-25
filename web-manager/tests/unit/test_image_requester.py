@@ -304,3 +304,208 @@ class TestImageGenerationRequest:
         # Assertions
         assert exc_info.value.status_code == 500
         assert "upload image to storage" in exc_info.value.detail
+
+    @pytest.mark.asyncio
+    @patch('service.image_requester.grpc.aio.insecure_channel')
+    @patch('service.image_requester.diffusion_processing_pb2')
+    async def test_successfully_generates_and_stores_image(self, mock_pb2, mock_channel):
+        """Should successfully generate image and store in Supabase"""
+        # Setup mocks
+        request_data = ImageCreationRequest(
+            prompt="test image",
+            width=1024,
+            height=1024,
+            num_inference_steps=30,
+            guidance_scale=7.5,
+            seed=12345
+        )
+        mock_user = Mock()
+        test_user_id = str(uuid.uuid4())
+        mock_user.id = test_user_id
+
+        # Mock database operations
+        mock_db = Mock()
+
+        # Mock storage operations
+        mock_storage = Mock()
+        mock_upload_response = Mock()
+        mock_storage.from_.return_value.upload.return_value = mock_upload_response
+        mock_storage.from_.return_value.get_public_url.return_value = "https://example.com/images/test.jpg"
+        mock_db.storage = mock_storage
+
+        # Mock database insert
+        mock_table = Mock()
+        mock_execute_response = Mock()
+        mock_table.insert.return_value.execute.return_value = mock_execute_response
+        mock_db.from_.return_value = mock_table
+
+        manager_config = {"ADDRESS": {"SERVER_IP_ADDRESS": "localhost:50051"}}
+        server_config = {}
+        mock_logger = Mock()
+
+        # Mock successful gRPC response
+        mock_response = Mock()
+        mock_response.status = mock_pb2.GenerationResponse.Status.SUCCESS
+        mock_response.image_data = b"fake_image_jpeg_data"
+        mock_response.used_seed = 12345
+        mock_response.request_id = str(uuid.uuid4())
+
+        mock_stub = AsyncMock()
+        mock_stub.GenerateImage.return_value = mock_response
+
+        mock_channel_instance = AsyncMock()
+        mock_channel_instance.__aenter__.return_value = mock_channel_instance
+        mock_channel_instance.__aexit__.return_value = None
+        mock_channel.return_value = mock_channel_instance
+
+        with patch('service.image_requester.diffusion_processing_pb2_grpc.ImageGeneratorStub', return_value=mock_stub):
+            # Call function
+            result = await image_generation_request(
+                request_data=request_data,
+                user=mock_user,
+                db=mock_db,
+                manager_config=manager_config,
+                server_config=server_config,
+                logger=mock_logger
+            )
+
+        # Assertions
+        assert result.image_url == "https://example.com/images/test.jpg"
+        assert result.used_seed == 12345
+        assert result.message == "Image generated and uploaded successfully."
+
+        # Verify storage operations
+        mock_storage.from_.assert_called()
+        assert mock_storage.from_.return_value.upload.called
+        assert mock_storage.from_.return_value.get_public_url.called
+
+        # Verify database insert was called
+        mock_table.insert.assert_called_once()
+        insert_data = mock_table.insert.call_args[0][0]
+        assert insert_data["user_id"] == test_user_id
+        assert insert_data["image_url"] == "https://example.com/images/test.jpg"
+        assert insert_data["prompt"] == "test image"
+        assert insert_data["seed"] == 12345
+
+    @pytest.mark.asyncio
+    @patch('service.image_requester.grpc.aio.insecure_channel')
+    @patch('service.image_requester.diffusion_processing_pb2')
+    async def test_successfully_generates_with_random_seed(self, mock_pb2, mock_channel):
+        """Should successfully generate image with random seed when seed=-1"""
+        # Setup mocks
+        request_data = ImageCreationRequest(
+            prompt="random seed test",
+            seed=-1  # Should generate random seed
+        )
+        mock_user = Mock()
+        mock_user.id = str(uuid.uuid4())
+
+        # Mock database operations
+        mock_db = Mock()
+        mock_storage = Mock()
+        mock_storage.from_.return_value.upload.return_value = Mock()
+        mock_storage.from_.return_value.get_public_url.return_value = "https://example.com/images/random.jpg"
+        mock_db.storage = mock_storage
+
+        mock_table = Mock()
+        mock_table.insert.return_value.execute.return_value = Mock()
+        mock_db.from_.return_value = mock_table
+
+        manager_config = {"ADDRESS": {"SERVER_IP_ADDRESS": "localhost:50051"}}
+        server_config = {}
+        mock_logger = Mock()
+
+        # Mock gRPC response with different seed (randomly generated)
+        mock_response = Mock()
+        mock_response.status = mock_pb2.GenerationResponse.Status.SUCCESS
+        mock_response.image_data = b"fake_image_data"
+        mock_response.used_seed = 98765  # Different from request
+        mock_response.request_id = str(uuid.uuid4())
+
+        mock_stub = AsyncMock()
+        mock_stub.GenerateImage.return_value = mock_response
+
+        mock_channel_instance = AsyncMock()
+        mock_channel_instance.__aenter__.return_value = mock_channel_instance
+        mock_channel_instance.__aexit__.return_value = None
+        mock_channel.return_value = mock_channel_instance
+
+        with patch('service.image_requester.diffusion_processing_pb2_grpc.ImageGeneratorStub', return_value=mock_stub):
+            # Call function
+            result = await image_generation_request(
+                request_data=request_data,
+                user=mock_user,
+                db=mock_db,
+                manager_config=manager_config,
+                server_config=server_config,
+                logger=mock_logger
+            )
+
+        # Assertions
+        assert result.used_seed == 98765
+        assert result.image_url == "https://example.com/images/random.jpg"
+
+        # Verify the seed used in gRPC request was NOT -1
+        grpc_request = mock_stub.GenerateImage.call_args[0][0]
+        assert grpc_request.seed != -1  # Should have generated a random seed
+
+    @pytest.mark.asyncio
+    @patch('service.image_requester.grpc.aio.insecure_channel')
+    @patch('service.image_requester.diffusion_processing_pb2')
+    async def test_continues_on_database_insert_failure(self, mock_pb2, mock_channel):
+        """Should log error but not raise exception when DB insert fails"""
+        # Setup mocks
+        request_data = ImageCreationRequest(prompt="db failure test")
+        mock_user = Mock()
+        mock_user.id = str(uuid.uuid4())
+
+        # Mock database operations
+        mock_db = Mock()
+        mock_storage = Mock()
+        mock_storage.from_.return_value.upload.return_value = Mock()
+        mock_storage.from_.return_value.get_public_url.return_value = "https://example.com/images/orphan.jpg"
+        mock_db.storage = mock_storage
+
+        # Mock database insert to fail
+        mock_table = Mock()
+        mock_table.insert.return_value.execute.side_effect = Exception("DB insert failed")
+        mock_db.from_.return_value = mock_table
+
+        manager_config = {"ADDRESS": {"SERVER_IP_ADDRESS": "localhost:50051"}}
+        server_config = {}
+        mock_logger = Mock()
+
+        # Mock successful gRPC response
+        mock_response = Mock()
+        mock_response.status = mock_pb2.GenerationResponse.Status.SUCCESS
+        mock_response.image_data = b"fake_image_data"
+        mock_response.used_seed = 54321
+        mock_response.request_id = str(uuid.uuid4())
+
+        mock_stub = AsyncMock()
+        mock_stub.GenerateImage.return_value = mock_response
+
+        mock_channel_instance = AsyncMock()
+        mock_channel_instance.__aenter__.return_value = mock_channel_instance
+        mock_channel_instance.__aexit__.return_value = None
+        mock_channel.return_value = mock_channel_instance
+
+        with patch('service.image_requester.diffusion_processing_pb2_grpc.ImageGeneratorStub', return_value=mock_stub):
+            # Call function - should NOT raise exception despite DB failure
+            result = await image_generation_request(
+                request_data=request_data,
+                user=mock_user,
+                db=mock_db,
+                manager_config=manager_config,
+                server_config=server_config,
+                logger=mock_logger
+            )
+
+        # Assertions - should still return successful response
+        assert result.image_url == "https://example.com/images/orphan.jpg"
+        assert result.used_seed == 54321
+
+        # Verify error was logged
+        mock_logger.error.assert_called()
+        error_call = mock_logger.error.call_args[0][0]
+        assert "Failed to insert image record" in error_call
