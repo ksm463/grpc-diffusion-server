@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from core.config import manager_config
 from core.lifespan import lifespan
 from core.exception_handler import custom_http_exception_handler
+from core.openapi import create_custom_openapi
 
 from router.info_router import info_router
 from router.page_router import page_router
@@ -15,7 +16,28 @@ from router.image_router import image_router
 from router.account_router import account_router
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Diffusion Server Web Manager API",
+    version="0.1.0",
+    description=(
+        "gRPC-based Stable Diffusion image generation web management API. "
+        "This service provides user authentication, image generation requests, "
+        "and gallery management capabilities."
+    ),
+    contact={
+        "name": "GitHub Repository",
+        "url": "https://github.com/ksm463/grpc-diffusion-server"
+    },
+    license_info={
+        "name": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    lifespan=lifespan
+)
+
+# Custom OpenAPI schema with JWT security documentation
+app.openapi = create_custom_openapi(app)
+
 
 @app.exception_handler(StarletteHTTPException)
 async def call_http_exception_handler(request: Request, exc: StarletteHTTPException):
@@ -45,7 +67,7 @@ app.mount("/preview", StaticFiles(directory=preview_dir_path), name="preview_fil
 
 
 app.include_router(info_router)
-app.include_router(page_router)
+app.include_router(page_router, include_in_schema=False)  # HTML pages excluded from API docs
 app.include_router(image_router)
 app.include_router(account_router)
 

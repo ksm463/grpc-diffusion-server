@@ -121,11 +121,38 @@ class ImageRecord(ImageRecordCreate):
 
     class Config:
         from_attributes = True
+        json_schema_extra = {
+            "examples": [
+                {
+                    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "image_url": "https://your-project.supabase.co/storage/v1/object/public/generated-images/user-uuid/image-uuid.png",
+                    "prompt": "A photorealistic image of an astronaut riding a horse",
+                    "guidance_scale": 7.5,
+                    "num_inference_steps": 28,
+                    "width": 1024,
+                    "height": 1024,
+                    "seed": 42,
+                    "id": "660e8400-e29b-41d4-a716-446655440001",
+                    "created_at": "2025-12-26T16:30:00.000000+00:00"
+                }
+            ]
+        }
 
 class ImageGenerationResponse(BaseModel):
     """
     이미지 생성 요청에 대한 최종 응답 모델
     """
-    image_url: str
-    used_seed: int
-    message: str
+    image_url: str = Field(..., description="Supabase Storage에 업로드된 이미지 URL")
+    used_seed: int = Field(..., description="실제로 사용된 시드 값")
+    message: str = Field(..., description="처리 결과 메시지")
+
+    class Config:
+        json_schema_extra = {
+            "examples": [
+                {
+                    "image_url": "https://your-project.supabase.co/storage/v1/object/public/generated-images/user-uuid/image-uuid.png",
+                    "used_seed": 42,
+                    "message": "Image generated and uploaded successfully."
+                }
+            ]
+        }
