@@ -1,0 +1,1254 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Diffusion Server Web Manager API",
+    "description": "gRPC-based Stable Diffusion image generation web management API. This service provides user authentication, image generation requests, and gallery management capabilities.",
+    "contact": {
+      "name": "GitHub Repository",
+      "url": "https://github.com/ksm463/grpc-diffusion-server"
+    },
+    "license": {
+      "name": "Apache-2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/info/host_system_info": {
+      "get": {
+        "tags": [
+          "info"
+        ],
+        "summary": "Get Host System Information",
+        "description": "호스트 시스템 정보 조회\n\n서버의 IP 주소, OS 버전, 타임존 정보를 반환합니다.",
+        "operationId": "get_host_system_information_api_info_host_system_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HostSystemInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info/client_ip": {
+      "get": {
+        "tags": [
+          "info"
+        ],
+        "summary": "Get Client Ip Address",
+        "description": "클라이언트 IP 주소 조회\n\n요청한 클라이언트의 IP 주소를 반환합니다.",
+        "operationId": "get_client_ip_address_api_info_client_ip_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientIPResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info/grpc_info": {
+      "get": {
+        "tags": [
+          "info"
+        ],
+        "summary": "Get Dummy Info Info",
+        "description": "gRPC 서버 정보 조회\n\nAI 서버의 gRPC 포트 번호와 작동 상태를 반환합니다.",
+        "operationId": "get_dummy_info_info_api_info_grpc_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GrpcInfoResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info/proto": {
+      "get": {
+        "tags": [
+          "info"
+        ],
+        "summary": "Get Proto Content",
+        "description": "gRPC Protocol Buffer 정의 파일 조회\n\ndiffusion_processing.proto 파일의 내용을 반환합니다.\n\n이 proto 파일은 이미지 생성을 위한 gRPC 인터페이스를 정의합니다:\n- Service: ImageGenerator\n- RPC: GenerateImage\n- Messages: GenerationRequest, GenerationResponse\n\n다른 언어로 gRPC 클라이언트 스텁을 생성할 때 사용할 수 있습니다.",
+        "operationId": "get_proto_content_api_info_proto_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/studio/generate": {
+      "post": {
+        "tags": [
+          "image"
+        ],
+        "summary": "Generate Image",
+        "description": "클라이언트로부터 프롬프트와 설정값을 받아 이미지를 생성하는 프로세스",
+        "operationId": "generate_image_api_studio_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageCreationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageGenerationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/gallery/my-images": {
+      "get": {
+        "tags": [
+          "image"
+        ],
+        "summary": "Get My Images",
+        "description": "현재 로그인된 사용자가 생성한 이미지 목록을 Supabase에서 가져옵니다.",
+        "operationId": "get_my_images_api_gallery_my_images_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 12,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImageRecord"
+                  },
+                  "title": "Response Get My Images Api Gallery My Images Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Signup",
+        "description": "새로운 사용자 등록",
+        "operationId": "signup_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/db/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login",
+        "description": "사용자 로그인을 처리하고 JWT를 반환",
+        "operationId": "login_auth_db_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLogin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Logout",
+        "description": "로그아웃\n\n현재 로그인된 사용자를 로그아웃하고 액세스 토큰을 무효화합니다.",
+        "operationId": "logout_auth_logout_post",
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/authenticated-route": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Authenticated Route",
+        "description": "인증된 사용자 확인\n\nJWT 토큰으로 인증된 사용자에게 환영 메시지를 반환합니다.",
+        "operationId": "authenticated_route_authenticated_route_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get My Info",
+        "description": "현재 로그인된 사용자의 정보를 반환",
+        "operationId": "get_my_info_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserInfoResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/users/me/password": {
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Update My Password",
+        "description": "비밀번호 변경\n\n현재 로그인된 사용자의 비밀번호를 변경합니다.",
+        "operationId": "update_my_password_users_me_password_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/users/": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "List All Users",
+        "description": "관리자 계정으로 모든 사용자 목록을 조회\n\nSupabase에 등록된 모든 사용자의 상세 정보를 반환합니다.\n관리자 권한이 필요합니다.",
+        "operationId": "list_all_users_users__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AdminUserItem"
+                  },
+                  "type": "array",
+                  "title": "Response List All Users Users  Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/users/{user_id}": {
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Delete User By Admin",
+        "description": "관리자가 특정 사용자를 ID로 삭제\n\n지정된 UUID를 가진 사용자를 데이터베이스에서 완전히 삭제합니다.\n관리자는 자신의 계정을 이 방법으로 삭제할 수 없습니다.",
+        "operationId": "delete_user_by_admin_users__user_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "삭제할 사용자의 UUID",
+              "examples": [
+                "423ecf9f-96eb-4d79-af05-019ee113366c"
+              ],
+              "title": "User Id"
+            },
+            "description": "삭제할 사용자의 UUID"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdminUserItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "사용자 UUID"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "사용자 이메일"
+          },
+          "phone": {
+            "type": "string",
+            "title": "Phone",
+            "description": "사용자 전화번호",
+            "default": ""
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "계정 생성 일시"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At",
+            "description": "계정 수정 일시"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At",
+            "description": "계정 인증 일시"
+          },
+          "email_confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Confirmed At",
+            "description": "이메일 인증 일시"
+          },
+          "phone_confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone Confirmed At",
+            "description": "전화번호 인증 일시"
+          },
+          "last_sign_in_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sign In At",
+            "description": "마지막 로그인 일시"
+          },
+          "user_metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User Metadata",
+            "description": "사용자 메타데이터"
+          },
+          "app_metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "App Metadata",
+            "description": "앱 메타데이터"
+          },
+          "aud": {
+            "type": "string",
+            "title": "Aud",
+            "description": "Audience"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "description": "사용자 역할"
+          },
+          "is_anonymous": {
+            "type": "boolean",
+            "title": "Is Anonymous",
+            "description": "익명 사용자 여부",
+            "default": false
+          },
+          "confirmation_sent_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Sent At",
+            "description": "인증 이메일 발송 일시"
+          },
+          "recovery_sent_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recovery Sent At",
+            "description": "복구 이메일 발송 일시"
+          },
+          "email_change_sent_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Change Sent At",
+            "description": "이메일 변경 요청 일시"
+          },
+          "new_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Email",
+            "description": "새 이메일 (변경 요청 시)"
+          },
+          "new_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Phone",
+            "description": "새 전화번호 (변경 요청 시)"
+          },
+          "invited_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited At",
+            "description": "초대 일시"
+          },
+          "action_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Link",
+            "description": "액션 링크"
+          },
+          "identities": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identities",
+            "description": "연결된 인증 정보"
+          },
+          "factors": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Factors",
+            "description": "다중 인증 요소"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "created_at",
+          "updated_at",
+          "aud",
+          "role"
+        ],
+        "title": "AdminUserItem",
+        "description": "관리자 사용자 목록의 개별 사용자 정보",
+        "examples": [
+          {
+            "app_metadata": {
+              "provider": "email",
+              "providers": [
+                "email"
+              ]
+            },
+            "aud": "authenticated",
+            "confirmed_at": "2025-08-23T10:08:20.378366Z",
+            "created_at": "2025-08-23T10:08:20.358054Z",
+            "email": "user@example.com",
+            "email_confirmed_at": "2025-08-23T10:08:20.378366Z",
+            "id": "423ecf9f-96eb-4d79-af05-019ee113366c",
+            "is_anonymous": false,
+            "last_sign_in_at": "2025-12-26T07:50:28.143064Z",
+            "phone": "",
+            "role": "authenticated",
+            "updated_at": "2025-12-26T07:50:28.148283Z",
+            "user_metadata": {
+              "email": "user@example.com",
+              "email_verified": true,
+              "phone_verified": false,
+              "role": "admin"
+            }
+          }
+        ]
+      },
+      "AuthResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token",
+            "description": "JWT access token"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "JWT refresh token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "description": "Token type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token"
+        ],
+        "title": "AuthResponse",
+        "description": "로그인 성공 시 반환되는 JWT 토큰 응답",
+        "examples": [
+          {
+            "access_token": "<supabase_jwt_access_token>",
+            "refresh_token": "<supabase_jwt_refresh_token>",
+            "token_type": "bearer"
+          }
+        ]
+      },
+      "ClientIPResponse": {
+        "properties": {
+          "client_ip": {
+            "type": "string",
+            "title": "Client Ip",
+            "description": "클라이언트 IP 주소"
+          }
+        },
+        "type": "object",
+        "required": [
+          "client_ip"
+        ],
+        "title": "ClientIPResponse",
+        "description": "클라이언트 IP 주소 응답",
+        "examples": [
+          {
+            "client_ip": "192.168.100.10"
+          }
+        ]
+      },
+      "GrpcInfoResponse": {
+        "properties": {
+          "grpc_port": {
+            "type": "string",
+            "title": "Grpc Port",
+            "description": "gRPC 서버 포트"
+          },
+          "server_status": {
+            "type": "string",
+            "title": "Server Status",
+            "description": "서버 상태"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "추가 메시지"
+          }
+        },
+        "type": "object",
+        "required": [
+          "grpc_port",
+          "server_status",
+          "message"
+        ],
+        "title": "GrpcInfoResponse",
+        "description": "gRPC 서버 정보 응답",
+        "examples": [
+          {
+            "grpc_port": "20051",
+            "message": "gRPC server is operational",
+            "server_status": "Running"
+          }
+        ]
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HostSystemInfo": {
+        "properties": {
+          "host_ip_address": {
+            "type": "string",
+            "title": "Host Ip Address",
+            "description": "호스트 서버 IP 주소"
+          },
+          "host_os_version": {
+            "type": "string",
+            "title": "Host Os Version",
+            "description": "호스트 OS 버전"
+          },
+          "host_timezone": {
+            "type": "string",
+            "title": "Host Timezone",
+            "description": "호스트 타임존"
+          }
+        },
+        "type": "object",
+        "required": [
+          "host_ip_address",
+          "host_os_version",
+          "host_timezone"
+        ],
+        "title": "HostSystemInfo",
+        "description": "호스트 시스템 정보 응답",
+        "examples": [
+          {
+            "host_ip_address": "192.168.100.50",
+            "host_os_version": "Ubuntu 22.04.3 LTS",
+            "host_timezone": "Asia/Seoul"
+          }
+        ]
+      },
+      "ImageCreationRequest": {
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Image Generation Prompt",
+            "description": "이미지 생성을 위한 텍스트 프롬프트"
+          },
+          "guidance_scale": {
+            "type": "number",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Guidance Scale",
+            "description": "생성될 이미지가 프롬프트를 얼마나 따를지 결정하는 값",
+            "default": 7.0
+          },
+          "num_inference_steps": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 10.0,
+            "title": "Number of Inference Steps",
+            "description": "이미지 생성 시 추론을 반복하는 횟수",
+            "default": 28
+          },
+          "width": {
+            "type": "integer",
+            "maximum": 1536.0,
+            "minimum": 512.0,
+            "title": "Image Width",
+            "default": 1024
+          },
+          "height": {
+            "type": "integer",
+            "maximum": 1536.0,
+            "minimum": 512.0,
+            "title": "Image Height",
+            "default": 1024
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed",
+            "description": "이미지 생성을 위한 시드 값. -1일 경우 랜덤으로 처리",
+            "default": -1
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt"
+        ],
+        "title": "ImageCreationRequest",
+        "description": "이미지 생성을 위한 요청 바디(Request Body) 모델",
+        "examples": [
+          {
+            "guidance_scale": 7.5,
+            "height": 1024,
+            "num_inference_steps": 30,
+            "prompt": "A photorealistic image of an astronaut riding a horse",
+            "seed": 123456789,
+            "width": 1024
+          }
+        ]
+      },
+      "ImageGenerationResponse": {
+        "properties": {
+          "image_url": {
+            "type": "string",
+            "title": "Image Url",
+            "description": "Supabase Storage에 업로드된 이미지 URL"
+          },
+          "used_seed": {
+            "type": "integer",
+            "title": "Used Seed",
+            "description": "실제로 사용된 시드 값"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "처리 결과 메시지"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image_url",
+          "used_seed",
+          "message"
+        ],
+        "title": "ImageGenerationResponse",
+        "description": "이미지 생성 요청에 대한 최종 응답 모델",
+        "examples": [
+          {
+            "image_url": "https://your-project.supabase.co/storage/v1/object/public/generated-images/user-uuid/image-uuid.png",
+            "message": "Image generated and uploaded successfully.",
+            "used_seed": 42
+          }
+        ]
+      },
+      "ImageRecord": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "image_url": {
+            "type": "string",
+            "title": "Image Url"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "guidance_scale": {
+            "type": "number",
+            "title": "Guidance Scale"
+          },
+          "num_inference_steps": {
+            "type": "integer",
+            "title": "Num Inference Steps"
+          },
+          "width": {
+            "type": "integer",
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "title": "Height"
+          },
+          "seed": {
+            "type": "integer",
+            "title": "Seed"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "image_url",
+          "prompt",
+          "guidance_scale",
+          "num_inference_steps",
+          "width",
+          "height",
+          "seed",
+          "id",
+          "created_at"
+        ],
+        "title": "ImageRecord",
+        "description": "DB에서 'images' 레코드를 조회한 후 사용할 전체 데이터 모델",
+        "examples": [
+          {
+            "created_at": "2025-12-26T16:30:00.000000+00:00",
+            "guidance_scale": 7.5,
+            "height": 1024,
+            "id": "660e8400-e29b-41d4-a716-446655440001",
+            "image_url": "https://your-project.supabase.co/storage/v1/object/public/generated-images/user-uuid/image-uuid.png",
+            "num_inference_steps": 28,
+            "prompt": "A photorealistic image of an astronaut riding a horse",
+            "seed": 42,
+            "user_id": "550e8400-e29b-41d4-a716-446655440000",
+            "width": 1024
+          }
+        ]
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
+        "description": "일반적인 메시지 응답",
+        "examples": [
+          {
+            "message": "User created successfully. Please check your email to confirm."
+          }
+        ]
+      },
+      "UpdatePasswordRequest": {
+        "properties": {
+          "new_password": {
+            "type": "string",
+            "minLength": 6,
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_password"
+        ],
+        "title": "UpdatePasswordRequest"
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "사용자 이메일 주소"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 6,
+            "title": "Password",
+            "description": "비밀번호 (최소 6자)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserCreate",
+        "examples": [
+          {
+            "email": "user@example.com",
+            "password": "securepassword123"
+          }
+        ]
+      },
+      "UserInfoResponse": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "사용자 이메일"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "사용자 UUID"
+          },
+          "is_verified": {
+            "type": "boolean",
+            "title": "Is Verified",
+            "description": "이메일 인증 여부"
+          },
+          "is_superuser": {
+            "type": "boolean",
+            "title": "Is Superuser",
+            "description": "관리자 여부"
+          },
+          "user_metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "User Metadata",
+            "description": "사용자 메타데이터",
+            "default": {}
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "description": "계정 생성 일시"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "id",
+          "is_verified",
+          "is_superuser",
+          "created_at"
+        ],
+        "title": "UserInfoResponse",
+        "description": "현재 사용자 정보 응답",
+        "examples": [
+          {
+            "created_at": "2025-12-26T10:00:00.000000+00:00",
+            "email": "user@example.com",
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "is_superuser": false,
+            "is_verified": true,
+            "user_metadata": {
+              "role": "user"
+            }
+          }
+        ]
+      },
+      "UserLogin": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "사용자 이메일 주소"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "비밀번호"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserLogin",
+        "examples": [
+          {
+            "email": "user@example.com",
+            "password": "securepassword123"
+          }
+        ]
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Enter your Supabase JWT token"
+      }
+    }
+  }
+}

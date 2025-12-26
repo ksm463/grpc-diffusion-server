@@ -1,0 +1,29 @@
+# docker-compose.test.yml
+# CI/CD 테스트 전용 compose 파일
+version: '3.8'
+
+services:
+  web-manager-test:
+    build:
+      context: ./web-manager
+      dockerfile: Dockerfile
+      target: test
+    image: web-manager:test
+    volumes:
+      # protos를 공통 경로에서 마운트 (CI에서는 체크아웃된 코드 사용)
+      - ./protos:/web-manager/app/protos
+    working_dir: /web-manager
+    command: uv run pytest tests/ -v
+
+  ai-server-test:
+    build:
+      context: ./ai-server
+      dockerfile: Dockerfile.ci
+      target: test
+    image: ai-server:test
+    volumes:
+      # protos를 공통 경로에서 마운트
+      - ./protos:/ai-server/src/protos
+    working_dir: /ai-server
+    # Disable coverage checks in CI since we're excluding 113 GPU tests
+    command: uv run pytest tests/ -v -m "not gpu" --no-cov
