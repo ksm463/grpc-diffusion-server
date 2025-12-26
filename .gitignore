@@ -198,3 +198,11 @@ cython_debug/
 
 # 루트 디렉터리의 README.md 파일은 예외
 !README.md
+
+# 테스트 커버리지 관련 파일 무시
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+htmlcov/
+.pytest_cache/

@@ -28,9 +28,11 @@ COPY . .
 # ---- Test Stage (CI용) ----
 FROM base as test
 
-# pytest는 이미 dependencies에 포함됨
+# test dependencies 설치
+RUN uv sync --no-cache --extra test
+
 # 테스트 실행 명령
-CMD ["bash", "-c", "source .venv/bin/activate && pytest tests/test_basic.py -v"]
+CMD ["bash", "-c", "source .venv/bin/activate && pytest tests/ -v -m 'not gpu'"]
 
 # ---- Production Stage ----
 FROM base as production

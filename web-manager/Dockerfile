@@ -23,9 +23,11 @@ COPY . .
 # ---- Test Stage (CI용) ----
 FROM base as test
 
-# pytest는 이미 dependencies에 포함됨
+# test dependencies 설치
+RUN uv sync --frozen --no-cache --extra test
+
 # 테스트 실행 명령
-CMD ["uv", "run", "pytest", "tests/test_basic.py", "-v"]
+CMD ["uv", "run", "pytest", "tests/", "-v"]
 
 # ---- Production Stage ----
 FROM base as production
