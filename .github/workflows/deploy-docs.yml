@@ -44,22 +44,13 @@ jobs:
           cd web-manager
           uv sync --frozen
 
-      - name: Generate gRPC proto files
+      - name: Setup proto files
         run: |
-          # grpcio-tools 설치
-          pip install grpcio-tools
-
-          # protos 디렉토리 생성
-          mkdir -p web-manager/app/protos
-
-          # proto 파일 생성
-          python -m grpc_tools.protoc \
-            -I./protos \
-            --python_out=./web-manager/app/protos \
-            --grpc_python_out=./web-manager/app/protos \
-            ./protos/diffusion_processing.proto
-
-          echo "✅ gRPC proto files generated"
+          # protos 폴더를 web-manager/app/protos로 복사
+          # (Docker 환경에서는 볼륨 마운트, CI에서는 복사)
+          cp -r protos web-manager/app/protos
+          echo "✅ Proto files copied to web-manager/app/protos"
+          ls -la web-manager/app/protos/
 
       - name: Generate OpenAPI documentation
         run: |
