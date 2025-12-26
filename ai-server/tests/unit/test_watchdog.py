@@ -1,7 +1,12 @@
 """
 Tests for process/watchdog.py
+
+NOTE: Marked as GPU-required due to import chain:
+process.watchdog -> process.__init__ -> server_setup -> interface.diffusion_service -> worker.adapter -> sd_worker -> torch
 """
 import pytest
+
+pytestmark = pytest.mark.gpu  # Mark entire module as GPU-required
 import time
 import os
 import signal

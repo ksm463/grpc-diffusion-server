@@ -1,7 +1,12 @@
 """
 Tests for interface/diffusion_service.py
+
+NOTE: Marked as GPU-required due to import chain:
+interface.diffusion_service -> worker.adapter -> sd_worker -> torch
 """
 import pytest
+
+pytestmark = pytest.mark.gpu  # Mark entire module as GPU-required
 import asyncio
 import msgpack
 from unittest.mock import Mock, AsyncMock, patch, MagicMock

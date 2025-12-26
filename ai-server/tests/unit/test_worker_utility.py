@@ -1,9 +1,13 @@
 """
 Tests for utility/worker_utility.py
 
+NOTE: Marked as GPU-required due to cupy dependency.
+
 This module tests worker utility functions including dtype conversion.
 """
 import pytest
+
+pytestmark = pytest.mark.gpu  # Mark entire module as GPU-required
 
 
 class TestConvertDtypeFromString:

@@ -3,6 +3,13 @@ Tests for utility/logger.py
 
 This module tests the logger configuration and setup functions.
 """
+import sys
+
+# Mock cupy before any other imports to avoid import errors in CI environment
+if 'cupy' not in sys.modules:
+    from unittest.mock import MagicMock
+    sys.modules['cupy'] = MagicMock()
+
 import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path

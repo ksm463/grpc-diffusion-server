@@ -1,9 +1,14 @@
 """
 Tests for worker/adapter.py
 
+NOTE: Marked as GPU-required due to import chain:
+worker.adapter -> sd_worker -> torch
+
 This module tests the RedisSDAdapter class which bridges Redis queue and SD Worker.
 """
 import pytest
+
+pytestmark = pytest.mark.gpu  # Mark entire module as GPU-required
 import asyncio
 import msgpack
 from unittest.mock import Mock, MagicMock, patch, AsyncMock

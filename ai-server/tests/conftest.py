@@ -18,6 +18,50 @@ from typing import AsyncGenerator
 import multiprocessing
 
 
+# GPU-dependent test files that should be skipped in CPU-only environments
+GPU_TEST_FILES = {
+    'test_lifecycle.py',
+    'test_watchdog.py',
+    'test_diffusion_service.py',
+    'test_server_setup.py',
+    'test_adapter.py',
+    'test_worker_utility.py',
+}
+
+
+def pytest_collection_modifyitems(config, items):
+    """
+    Modify test collection to handle GPU-dependent tests.
+
+    When running with '-m "not gpu"', we skip GPU test files entirely
+    to avoid import errors from torch dependencies.
+    """
+    # Check if we're excluding GPU tests
+    markexpr = config.getoption("-m", default="")
+    if "not gpu" in markexpr:
+        # Remove items from GPU test files
+        skip_gpu = pytest.mark.skip(reason="GPU test skipped in CPU-only environment")
+        for item in items:
+            test_file = Path(item.fspath).name
+            if test_file in GPU_TEST_FILES:
+                item.add_marker(skip_gpu)
+
+
+def pytest_ignore_collect(collection_path, config):
+    """
+    Ignore GPU test files during collection if running without GPU.
+
+    This prevents import errors from torch dependencies in CI environments.
+    """
+    # Check if we're excluding GPU tests
+    markexpr = config.getoption("-m", default="")
+    if "not gpu" in markexpr:
+        # Skip collection of GPU test files entirely
+        if collection_path.name in GPU_TEST_FILES:
+            return True
+    return False
+
+
 @pytest.fixture
 async def redis_client():
     """
