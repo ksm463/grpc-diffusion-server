@@ -97,6 +97,28 @@ docker compose up -d
 
 ---
 
+## 📖 API 문서 (API Documentation)
+
+**온라인 API 문서:**
+
+https://ksm463.github.io/grpc-diffusion-server/
+
+대화형 API 문서는 Swagger UI를 통해 제공됩니다. 모든 엔드포인트, 요청/응답 스키마, 인증 방법을 확인할 수 있습니다.
+
+**로컬에서 문서 생성:**
+
+```bash
+# web-manager 컨테이너에서 실행
+docker-compose exec web-manager python app/scripts/export_openapi.py
+
+# 생성된 문서 확인
+open swagger/index.html
+```
+
+자세한 내용은 [swagger/README.md](swagger/README.md)를 참조하세요.
+
+---
+
 ## 사용법 (Usage)
 
 ### 이미지 생성 (Image Generation)
