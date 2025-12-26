@@ -49,6 +49,9 @@ jobs:
           # grpcio-tools 설치
           pip install grpcio-tools
 
+          # protos 디렉토리 생성
+          mkdir -p web-manager/app/protos
+
           # proto 파일 생성
           python -m grpc_tools.protoc \
             -I./protos \
