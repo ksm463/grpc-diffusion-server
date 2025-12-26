@@ -59,10 +59,12 @@ instrumentator = Instrumentator(
 )
 instrumentator.instrument(app).expose(app, include_in_schema=False, endpoint="/metrics")
 
-static_dir_app_path = Path("/web-manager/app/web/static")
+# 상대 경로로 변경 (Docker와 CI 환경 모두 호환)
+BASE_DIR = Path(__file__).resolve().parent
+static_dir_app_path = BASE_DIR / "web" / "static"
 app.mount("/web/static", StaticFiles(directory=static_dir_app_path), name="static_app_files")
 
-preview_dir_path = Path("/web-manager/preview")
+preview_dir_path = BASE_DIR.parent / "preview"
 app.mount("/preview", StaticFiles(directory=preview_dir_path), name="preview_files")
 
 
