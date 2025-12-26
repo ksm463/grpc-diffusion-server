@@ -13,7 +13,11 @@ from utility.request import get_manager_config, get_server_config, get_logger
 image_router = APIRouter()
 
 
-@image_router.post("/api/studio/generate")
+@image_router.post(
+    "/api/studio/generate",
+    response_model=ImageGenerationResponse,
+    tags=["image"]
+)
 async def generate_image(
     request_data: ImageCreationRequest,
     user: dict = Depends(get_current_user),
@@ -37,8 +41,9 @@ async def generate_image(
     return response
 
 @image_router.get(
-    "/api/gallery/my-images", 
-    response_model=List[ImageRecord]
+    "/api/gallery/my-images",
+    response_model=List[ImageRecord],
+    tags=["image"]
 )
 async def get_my_images(
     user: SupabaseUser = Depends(get_current_user),

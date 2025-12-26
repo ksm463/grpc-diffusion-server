@@ -3,14 +3,24 @@ from fastapi.responses import JSONResponse, PlainTextResponse
 from pathlib import Path
 import os
 
+from database.info_schemas import HostSystemInfo, ClientIPResponse, GrpcInfoResponse
 from utility.request import get_server_config, get_manager_config, get_logger
 
 
 info_router = APIRouter()
 
 
-@info_router.get("/api/info/host_system_info")
+@info_router.get(
+    "/api/info/host_system_info",
+    response_model=HostSystemInfo,
+    tags=["info"]
+)
 async def get_host_system_information(request: Request, logger=Depends(get_logger)):
+    """
+    호스트 시스템 정보 조회
+
+    서버의 IP 주소, OS 버전, 타임존 정보를 반환합니다.
+    """
     # logger.debug(f"Client {request.client.host}: Requested host system information.")
 
     host_ip = os.getenv("HOST_IP", "N/A")
@@ -25,14 +35,32 @@ async def get_host_system_information(request: Request, logger=Depends(get_logge
         "host_timezone": host_timezone
     })
 
-@info_router.get("/api/info/client_ip")
+@info_router.get(
+    "/api/info/client_ip",
+    response_model=ClientIPResponse,
+    tags=["info"]
+)
 async def get_client_ip_address(request: Request, logger=Depends(get_logger)):
+    """
+    클라이언트 IP 주소 조회
+
+    요청한 클라이언트의 IP 주소를 반환합니다.
+    """
     client_ip = request.client.host
     logger.info(f"Client {client_ip}: Requested client IP address. Returning: {client_ip}")
     return JSONResponse(content={"client_ip": client_ip})
 
-@info_router.get("/api/info/grpc_info")
+@info_router.get(
+    "/api/info/grpc_info",
+    response_model=GrpcInfoResponse,
+    tags=["info"]
+)
 async def get_dummy_info_info(request: Request, server_config = Depends(get_server_config), logger=Depends(get_logger)):
+    """
+    gRPC 서버 정보 조회
+
+    AI 서버의 gRPC 포트 번호와 작동 상태를 반환합니다.
+    """
     logger.debug("Serving grpc port data for /api/info/grpc_info")
     
     grpc_port = server_config['grpc']['port']
@@ -45,11 +73,27 @@ async def get_dummy_info_info(request: Request, server_config = Depends(get_serv
     })
 
 
-@info_router.get("/api/info/proto", response_class=PlainTextResponse)
+@info_router.get(
+    "/api/info/proto",
+    response_class=PlainTextResponse,
+    tags=["info"]
+)
 async def get_proto_content(
     manager_config = Depends(get_manager_config),
     logger = Depends(get_logger)
 ):
+    """
+    gRPC Protocol Buffer 정의 파일 조회
+
+    diffusion_processing.proto 파일의 내용을 반환합니다.
+
+    이 proto 파일은 이미지 생성을 위한 gRPC 인터페이스를 정의합니다:
+    - Service: ImageGenerator
+    - RPC: GenerateImage
+    - Messages: GenerationRequest, GenerationResponse
+
+    다른 언어로 gRPC 클라이언트 스텁을 생성할 때 사용할 수 있습니다.
+    """
     if not manager_config or 'ENV' not in manager_config or 'PROTO_BUFF_PATH' not in manager_config['ENV']:
         logger.error("Configuration error: PROTO_BUFF_PATH not found in manager_config['ENV']")
         raise HTTPException(status_code=500, detail="Server configuration error: PROTO_BUFF_PATH is not set.")

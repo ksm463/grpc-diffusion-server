@@ -66,14 +66,15 @@ class TestUserCreate:
         assert "@" in user.email
         assert "example.com" in user.email.lower()
 
-    def test_empty_password_accepted(self):
-        """Empty password should be accepted (validation done elsewhere)"""
+    def test_empty_password_rejected(self):
+        """Empty password should be rejected due to min_length=6"""
         data = {
             "email": "test@example.com",
             "password": ""
         }
-        user = UserCreate(**data)
-        assert user.password == ""
+        with pytest.raises(ValidationError) as exc_info:
+            UserCreate(**data)
+        assert "at least 6 characters" in str(exc_info.value)
 
 
 class TestUserLogin:
