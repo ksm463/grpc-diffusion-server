@@ -70,6 +70,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ./web-manager:/web-manager
       - ./protos:/web-manager/app/protos
+      - ./swagger:/swagger
     networks:
       - diffusion-net
     # command: /bin/bash -c "cd app && uv run main.py"
