@@ -206,3 +206,9 @@ coverage.xml
 coverage.json
 htmlcov/
 .pytest_cache/
+
+# 추가 무시 파일
+ai-server/src/model/sd3.5-medium-pytorch/
+set_supabase/.vscode/
+set_supabase/supabase/
+.github/workflows/cd.yml

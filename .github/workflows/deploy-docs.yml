@@ -44,6 +44,20 @@ jobs:
           cd web-manager
           uv sync --frozen
 
+      - name: Generate gRPC proto files
+        run: |
+          # grpcio-tools 설치
+          pip install grpcio-tools
+
+          # proto 파일 생성
+          python -m grpc_tools.protoc \
+            -I./protos \
+            --python_out=./web-manager/app/protos \
+            --grpc_python_out=./web-manager/app/protos \
+            ./protos/diffusion_processing.proto
+
+          echo "✅ gRPC proto files generated"
+
       - name: Generate OpenAPI documentation
         run: |
           cd web-manager
