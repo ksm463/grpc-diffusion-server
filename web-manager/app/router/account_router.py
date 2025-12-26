@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Path
 from typing import List
+from datetime import datetime
 from supabase import Client
 from gotrue.errors import AuthApiError
 
@@ -152,13 +153,21 @@ async def get_my_info(
     is_superuser = user.user_metadata.get("role") == "admin"
     is_verified = user.email_confirmed_at is not None
 
+    # Handle created_at: convert datetime to string if needed
+    created_at_str = None
+    if user.created_at:
+        if isinstance(user.created_at, datetime):
+            created_at_str = user.created_at.isoformat()
+        else:
+            created_at_str = user.created_at
+
     return {
         "email": user.email,
         "id": user.id,
         "is_verified": is_verified,
         "is_superuser": is_superuser,
         "user_metadata": user.user_metadata,
-        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "created_at": created_at_str,
     }
 
 # --- 비밀번호 변경 API ---

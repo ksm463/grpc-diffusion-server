@@ -365,21 +365,59 @@ class TestListAllUsers:
         """Should allow admin to list all users"""
         # Mock admin client
         mock_admin = Mock()
-        # Return actual serializable data
-        mock_users_response = {
-            "users": [
-                {
-                    "id": "user-1",
-                    "email": "user1@example.com",
-                    "created_at": "2025-01-01T00:00:00Z"
-                },
-                {
-                    "id": "user-2",
-                    "email": "user2@example.com",
-                    "created_at": "2025-01-02T00:00:00Z"
-                }
-            ]
-        }
+        # Return list directly (matching actual Supabase behavior)
+        mock_users_response = [
+            {
+                "id": "user-1",
+                "email": "user1@example.com",
+                "phone": "",
+                "created_at": "2025-01-01T00:00:00Z",
+                "updated_at": "2025-01-01T00:00:00Z",
+                "confirmed_at": "2025-01-01T00:00:00Z",
+                "email_confirmed_at": "2025-01-01T00:00:00Z",
+                "phone_confirmed_at": None,
+                "last_sign_in_at": "2025-01-01T00:00:00Z",
+                "user_metadata": {},
+                "app_metadata": {"provider": "email", "providers": ["email"]},
+                "aud": "authenticated",
+                "role": "authenticated",
+                "is_anonymous": False,
+                "confirmation_sent_at": None,
+                "recovery_sent_at": None,
+                "email_change_sent_at": None,
+                "new_email": None,
+                "new_phone": None,
+                "invited_at": None,
+                "action_link": None,
+                "identities": None,
+                "factors": None
+            },
+            {
+                "id": "user-2",
+                "email": "user2@example.com",
+                "phone": "",
+                "created_at": "2025-01-02T00:00:00Z",
+                "updated_at": "2025-01-02T00:00:00Z",
+                "confirmed_at": "2025-01-02T00:00:00Z",
+                "email_confirmed_at": "2025-01-02T00:00:00Z",
+                "phone_confirmed_at": None,
+                "last_sign_in_at": "2025-01-02T00:00:00Z",
+                "user_metadata": {},
+                "app_metadata": {"provider": "email", "providers": ["email"]},
+                "aud": "authenticated",
+                "role": "authenticated",
+                "is_anonymous": False,
+                "confirmation_sent_at": None,
+                "recovery_sent_at": None,
+                "email_change_sent_at": None,
+                "new_email": None,
+                "new_phone": None,
+                "invited_at": None,
+                "action_link": None,
+                "identities": None,
+                "factors": None
+            }
+        ]
         mock_admin.auth.admin.list_users.return_value = mock_users_response
 
         # Override dependencies
@@ -394,8 +432,10 @@ class TestListAllUsers:
         # Assertions
         assert response.status_code == 200
         data = response.json()
-        assert "users" in data
-        assert len(data["users"]) == 2
+        assert isinstance(data, list)
+        assert len(data) == 2
+        assert data[0]["id"] == "user-1"
+        assert data[1]["id"] == "user-2"
         mock_admin.auth.admin.list_users.assert_called_once()
 
     def test_returns_500_when_list_users_fails(self, client, mock_admin_user, mock_logger):
