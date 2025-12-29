@@ -1,0 +1,155 @@
+name: Deploy API Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'web-manager/app/**'
+      - 'web-manager/pyproject.toml'
+      - '.github/workflows/deploy-docs.yml'
+  workflow_dispatch:  # 수동 실행 가능
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시 배포 방지
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build API Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          cd web-manager
+          uv sync --frozen
+
+      - name: Setup proto files
+        run: |
+          # protos 폴더를 web-manager/app/protos로 복사
+          # (Docker 환경에서는 볼륨 마운트, CI에서는 복사)
+          cp -r protos web-manager/app/protos
+          echo "✅ Proto files copied to web-manager/app/protos"
+          ls -la web-manager/app/protos/
+
+      - name: Generate OpenAPI documentation
+        run: |
+          cd web-manager
+
+          # export_openapi.py 스크립트 실행
+          # Docker 환경과 다르게 로컬 Python 환경에서 실행하므로 경로 수정 필요
+          uv run python -c "
+          import json
+          import sys
+          from pathlib import Path
+
+          # app 디렉토리를 Python 경로에 추가
+          app_dir = Path.cwd() / 'app'
+          sys.path.insert(0, str(app_dir))
+
+          # FastAPI 앱 import
+          from main import app
+
+          # OpenAPI 스펙 가져오기
+          print('📖 Generating OpenAPI schema from FastAPI app...')
+          openapi_schema = app.openapi()
+
+          # swagger 디렉토리 생성
+          swagger_dir = Path('../swagger')
+          swagger_dir.mkdir(exist_ok=True)
+
+          # OpenAPI JSON 저장
+          openapi_json_path = swagger_dir / 'openapi.json'
+          with open(openapi_json_path, 'w', encoding='utf-8') as f:
+              json.dump(openapi_schema, f, indent=2, ensure_ascii=False)
+          print(f'✅ OpenAPI JSON saved: {openapi_json_path}')
+
+          # Swagger UI HTML (간단 버전)
+          info = openapi_schema.get('info', {})
+          title = info.get('title', 'API Documentation')
+
+          html = '''<!DOCTYPE html>
+          <html lang=\"ko\">
+          <head>
+              <meta charset=\"UTF-8\">
+              <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
+              <title>''' + title + '''</title>
+              <link rel=\"stylesheet\" href=\"https://unpkg.com/swagger-ui-dist@5/swagger-ui.css\">
+              <style>
+                  body { margin: 0; padding: 0; }
+                  .swagger-ui .topbar { display: none; }
+              </style>
+          </head>
+          <body>
+              <div id=\"swagger-ui\"></div>
+              <script src=\"https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js\"></script>
+              <script src=\"https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js\"></script>
+              <script>
+                  window.onload = () => {
+                      SwaggerUIBundle({
+                          url: './openapi.json',
+                          dom_id: '#swagger-ui',
+                          deepLinking: true,
+                          presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+                          layout: 'StandaloneLayout',
+                          persistAuthorization: true
+                      });
+                  };
+              </script>
+          </body>
+          </html>'''
+
+          index_html_path = swagger_dir / 'index.html'
+          with open(index_html_path, 'w', encoding='utf-8') as f:
+              f.write(html)
+          print(f'✅ Swagger UI HTML saved: {index_html_path}')
+
+          # 통계 출력
+          paths_count = len(openapi_schema.get('paths', {}))
+          schemas_count = len(openapi_schema.get('components', {}).get('schemas', {}))
+          print(f'\n📊 Generated documentation with {paths_count} endpoints and {schemas_count} schemas')
+          "
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './swagger'
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Output deployment URL
+        run: |
+          echo "🚀 Documentation deployed successfully!"
+          echo "📖 View at: ${{ steps.deployment.outputs.page_url }}"

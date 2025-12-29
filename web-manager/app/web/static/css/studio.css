@@ -1,0 +1,226 @@
+:root {
+    --body-bg-color: #F4F4F9;
+    --container-bg-color: #FFFFFF;
+    --primary-color: #9D8DF1;
+    --secondary-bg-color: #2c2c54;
+    --accent-color: #F7C873;
+    --dark-text-color: #333333;
+    --light-text-color: #EFEFEF;
+    --border-color: #e0e0e0;
+}
+
+/* 기본 & 컨테이너 */
+body {
+    font-family: Arial, sans-serif;
+    background-color: var(--body-bg-color);
+    margin: 0;
+    /* [수정] padding-top 제거 */
+    /* padding-top: 60px; */ 
+}
+
+#container {
+    width: 80%;
+    max-width: 800px;
+    
+    /* [수정] 왼쪽 마진을 주어 네비게이션 바 공간 확보 */
+    margin: 30px auto 30px 250px; /* 상, 우, 하, 좌 (220px 바 너비 + 30px 여백) */
+
+    background: var(--container-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+#container:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.container-header {
+    background-color: var(--secondary-bg-color);
+    color: var(--primary-color);
+    padding: 20px 0;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    border-bottom: 1px solid #d0d0d0;
+}
+
+.content {
+    padding: 25px 30px 35px;
+    text-align: left;
+}
+
+/* 입력 & 버튼 */
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--dark-text-color);
+    font-size: 15px;
+}
+
+#prompt-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
+    box-sizing: border-box;
+    resize: vertical;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    background-color: #f9f9f9;
+    color: var(--dark-text-color);
+}
+
+#prompt-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 6px rgba(157, 141, 241, 0.4);
+}
+
+#generate-button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--light-text-color);
+    background-color: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+#generate-button:hover {
+    background-color: #7e6ed9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#generate-button:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#generate-button:disabled {
+    background-color: #ccc;
+    color: #888;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+
+/* ----- 고급 설정 (원본 스타일로 복원 시작) ----- */
+.advanced-settings {
+    margin-top: 25px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 5px 15px;
+}
+
+.advanced-settings summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 10px 0;
+    color: var(--dark-text-color);
+}
+
+.settings-content {
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item label {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 8px;
+    display: block;
+}
+
+input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+}
+
+.seed-container {
+    display: flex;
+    align-items: center;
+}
+
+#seed-input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#random-seed-button {
+    margin-left: 10px;
+    padding: 8px 12px;
+    border: none;
+    background-color: var(--accent-color);
+    color: var(--dark-text-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#random-seed-button:hover {
+    background-color: #f5be5b;
+}
+/* ----- 고급 설정 (원본 스타일로 복원 끝) ----- */
+
+
+/* 결과 영역 */
+.result-area {
+    margin-top: 25px;
+}
+
+.result-area h2 {
+    font-size: 1.3em;
+    font-weight: bold;
+    color: var(--dark-text-color);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+#result-image-wrapper {
+    width: 80%;
+    min-height: 410px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.05);
+}
+
+#result-image-wrapper p {
+    color: #888;
+    font-size: 16px;
+}
+
+#result-image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 6px;
+}

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account Page</title>
+    <link rel="icon" type="image/x-icon" href="/web/static/images/favicon.ico" />
+    <link rel="stylesheet" href="/web/static/css/create_account.css">
+</head>
+<body>
+    <div id="container">
+        <div class="container-header">계정 생성</div>
+
+        <main id="app">
+            <div id="create-account-page-content" class="page-content active">
+                <section id="create-account-section">
+                    <h2>새 계정 생성</h2>
+                    <p>아이디(이메일)와 비밀번호를 입력하여 새 계정을 만듭니다.</p>
+                    <form id="createAccountForm">
+                        <div>
+                            <label for="email">아이디 (이메일 형식):</label>
+                            <input type="email" id="email" name="email" required autocomplete="email">
+                        </div>
+                        <div>
+                            <label for="password">비밀번호:</label>
+                            <input type="password" id="password" name="password" required autocomplete="new-password">
+                        </div>
+                        <div>
+                            <label for="confirmPassword">비밀번호 확인:</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password">
+                        </div>
+                        <button type="submit" id="createAccountButton">계정 생성</button>
+                    </form>
+                    <div id="createAccountMessage" class="message-area" style="display: none;"></div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/web/static/js/create_account.js"></script>
+</body>
+</html>

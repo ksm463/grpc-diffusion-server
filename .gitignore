@@ -192,3 +192,23 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# 모든 마크다운(Markdown) 파일(.md)을 무시
+*.md
+
+# 루트 디렉터리의 README.md 파일은 예외
+!README.md
+
+# 테스트 커버리지 관련 파일 무시
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+htmlcov/
+.pytest_cache/
+
+# 추가 무시 파일
+ai-server/src/model/sd3.5-medium-pytorch/
+set_supabase/.vscode/
+set_supabase/supabase/
+.github/workflows/cd.yml

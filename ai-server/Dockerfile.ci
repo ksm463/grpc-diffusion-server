@@ -1,0 +1,44 @@
+# ai-server/Dockerfile.ci
+# CI 전용 - 가벼운 Python 이미지 사용 (GPU 의존성 제외)
+
+FROM python:3.10-slim as base
+
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-c"]
+ENV LANG=C.UTF-8
+
+# 기본 패키지 설치
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# uv 설치
+RUN pip install -U --no-cache-dir pip && \
+    pip install --no-cache-dir uv
+
+WORKDIR /ai-server
+
+# 가상환경 생성 (production Dockerfile처럼)
+RUN rm -rf .venv && uv venv --python python3 .venv
+
+# 가상환경을 PATH에 추가
+ENV PATH="/ai-server/.venv/bin:$PATH"
+
+# pyproject.toml과 uv.lock 복사
+COPY pyproject.toml uv.lock* ./
+
+# 기본 의존성만 설치 (GPU 제외)
+RUN uv sync --frozen --no-cache || uv sync --no-cache
+
+# 소스 코드 복사
+COPY . .
+
+# ---- Test Stage ----
+FROM base as test
+
+# test dependencies 설치
+RUN uv sync --no-cache --extra test
+
+# 테스트 실행 명령 (GPU 제외)
+CMD ["uv", "run", "pytest", "tests/", "-v", "-m", "not gpu"]
